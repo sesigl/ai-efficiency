@@ -15,7 +15,7 @@ export class PriceEntryDTO {
   ) {}
 }
 
-export class PromotionDTO {
+class PromotionDTO {
   constructor(
     public readonly name: string,
     public readonly type: PromotionType,

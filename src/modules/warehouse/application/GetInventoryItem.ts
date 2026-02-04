@@ -12,7 +12,7 @@ export interface InventoryItemDTO {
   reservations: ReservationDTO[];
 }
 
-export interface ReservationDTO {
+interface ReservationDTO {
   id: string;
   quantity: number;
   expiresAt: Date;

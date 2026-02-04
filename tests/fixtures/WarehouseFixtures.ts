@@ -20,9 +20,3 @@ export function futureDate(daysFromNow: number = 1): Date {
   date.setDate(date.getDate() + daysFromNow);
   return date;
 }
-
-export function pastDate(daysAgo: number = 1): Date {
-  const date = new Date();
-  date.setDate(date.getDate() - daysAgo);
-  return date;
-}
