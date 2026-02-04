@@ -5,7 +5,6 @@ Before diving into code, use these files to orient yourself:
 1.  **Dependency Cruiser Config:** Check this file to understand the strict folder structure and enforced dependency rules for DDD.
 2.  **Architecture Folder (`architecture/`):** Refer to this for the "Big Picture".
     * `contexts.mermaid`: Defines Bounded Contexts and their relationships.
-    * `arc42/` to Understand the specific Aggregate Roots and single Bounded Context scope.
 
 ## 2. Philosophy & Style
 Adhere to the combined philosophies of **Kent Beck** and **Uncle Bob**:
@@ -79,7 +78,6 @@ api -> application -> domain <- infrastructure
 * **Trigger:** Creation of a new Bounded Context or Domain Concept.
 * **Action:** Update:
     * `architecture/contexts.mermaid`: Context relationships and Shared Language contracts.
-    * `architecture/arc42/` High-level overview of Aggregates/Entities.
 
 ## 7. Technology Specifics
 * **REST Framework:** Fastify - high-performance, TypeScript-first REST framework
