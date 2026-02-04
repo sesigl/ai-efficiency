@@ -1,20 +1,14 @@
-import type { PriceRepository } from "./domain/PriceRepository.js";
+import { PriceEntryUseCases } from "./application/price-entry/PriceEntryUseCases.js";
+import { PromotionUseCases } from "./application/promotions/PromotionUseCases.js";
 import type { AvailabilityProvider } from "./domain/AvailabilityProvider.js";
-import { SetBasePrice } from "./application/SetBasePrice.js";
-import { AddPromotion } from "./application/AddPromotion.js";
-import { RemovePromotion } from "./application/RemovePromotion.js";
-import { CalculatePrice } from "./application/CalculatePrice.js";
-import { GetPriceEntry } from "./application/GetPriceEntry.js";
+import type { PriceRepository } from "./domain/PriceRepository.js";
 import { createPricingInfrastructure } from "./infrastructure/di.js";
 import type { AvailabilityFetcher } from "./infrastructure/WarehouseAvailabilityAdapter.js";
 
 export interface PricingUseCases {
   repository: PriceRepository;
-  setBasePrice: SetBasePrice;
-  addPromotion: AddPromotion;
-  removePromotion: RemovePromotion;
-  calculatePrice: CalculatePrice;
-  getPriceEntry: GetPriceEntry;
+  priceEntries: PriceEntryUseCases;
+  promotions: PromotionUseCases;
 }
 
 export function createPricingUseCases(
@@ -28,10 +22,7 @@ export function createPricingUseCases(
 
   return {
     repository: repo,
-    setBasePrice: new SetBasePrice(repo),
-    addPromotion: new AddPromotion(repo),
-    removePromotion: new RemovePromotion(repo),
-    calculatePrice: new CalculatePrice(repo, availabilityProvider),
-    getPriceEntry: new GetPriceEntry(repo),
+    priceEntries: new PriceEntryUseCases(repo, availabilityProvider),
+    promotions: new PromotionUseCases(repo),
   };
 }

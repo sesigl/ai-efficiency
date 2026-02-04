@@ -4,13 +4,13 @@ import { createPricingUseCases } from "./modules/pricing/di.js";
 import { registerWarehouseRoutes } from "./api/warehouse.routes.js";
 import { registerPricingRoutes } from "./api/pricing.routes.js";
 import type { AvailabilityFetcher } from "./modules/pricing/infrastructure/WarehouseAvailabilityAdapter.js";
-import type { GetAvailability } from "./modules/warehouse/application/GetAvailability.js";
+import type { InventoryUseCases } from "./modules/warehouse/application/inventory/InventoryUseCases.js";
 
 class WarehouseAvailabilityFetcher implements AvailabilityFetcher {
-  constructor(private readonly getAvailability: GetAvailability) {}
+  constructor(private readonly inventory: InventoryUseCases) {}
 
   fetchAvailability(sku: string) {
-    return this.getAvailability.execute({ sku });
+    return this.inventory.getAvailability({ sku });
   }
 }
 
@@ -21,7 +21,7 @@ export function createApp() {
 
   const warehouseUseCases = createWarehouseUseCases();
   const pricingUseCases = createPricingUseCases(
-    new WarehouseAvailabilityFetcher(warehouseUseCases.getAvailability),
+    new WarehouseAvailabilityFetcher(warehouseUseCases.inventory),
   );
 
   registerWarehouseRoutes(fastify, warehouseUseCases);
