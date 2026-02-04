@@ -1,6 +1,6 @@
 import type { PriceEntryRepository } from "../../domain/PriceEntryRepository.js";
 import { Promotion, type PromotionType } from "../../domain/Promotion.js";
-import { SKU } from "../../domain/SKU.js";
+import { SKU } from "../../domain/Sku.js";
 
 export interface AddPromotionCommand {
   sku: string;

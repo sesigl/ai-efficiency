@@ -15,7 +15,8 @@
     "format:check": "biome format src tests",
     "dep-check": "depcruise src --config .dependency-cruiser.cjs",
     "knip": "knip",
-    "verify": "npm run format:check && npm run lint && npm run knip && npm run dep-check && npm run build && npm run test"
+    "ls-lint": "ls-lint",
+    "verify": "npm run format:check && npm run lint && npm run ls-lint && npm run knip && npm run dep-check && npm run build && npm run test"
   },
   "keywords": [
     "ddd",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.14",
+    "@ls-lint/ls-lint": "^2.3.1",
     "@types/node": "^20.10.0",
     "@vitest/coverage-v8": "^1.6.1",
     "dependency-cruiser": "^16.0.0",
