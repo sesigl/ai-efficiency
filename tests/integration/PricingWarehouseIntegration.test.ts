@@ -1,13 +1,23 @@
 import { describe, it, expect } from "vitest";
 import { createWarehouseUseCases } from "../../src/modules/warehouse/di.js";
 import { createPricingUseCases } from "../../src/modules/pricing/di.js";
+import type { AvailabilityFetcher } from "../../src/modules/pricing/infrastructure/WarehouseAvailabilityAdapter.js";
+import type { GetAvailability } from "../../src/modules/warehouse/application/GetAvailability.js";
 import { promotionDates } from "../fixtures/PricingFixtures.js";
 
 describe("Pricing and Warehouse Integration", () => {
+  class WarehouseAvailabilityFetcher implements AvailabilityFetcher {
+    constructor(private readonly getAvailability: GetAvailability) {}
+
+    fetchAvailability(sku: string) {
+      return this.getAvailability.execute({ sku });
+    }
+  }
+
   function createIntegratedUseCases() {
     const warehouseUseCases = createWarehouseUseCases();
-    const pricingUseCases = createPricingUseCases((sku: string) =>
-      warehouseUseCases.getAvailability.execute({ sku }),
+    const pricingUseCases = createPricingUseCases(
+      new WarehouseAvailabilityFetcher(warehouseUseCases.getAvailability),
     );
     return { warehouseUseCases, pricingUseCases };
   }

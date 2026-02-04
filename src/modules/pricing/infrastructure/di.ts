@@ -6,15 +6,24 @@ import {
   type AvailabilityFetcher,
 } from "./WarehouseAvailabilityAdapter.js";
 
+export interface AvailabilityProviderFactory {
+  create(fetcher: AvailabilityFetcher): AvailabilityProvider;
+}
+
+class WarehouseAvailabilityProviderFactory implements AvailabilityProviderFactory {
+  create(fetcher: AvailabilityFetcher): AvailabilityProvider {
+    return new WarehouseAvailabilityAdapter(fetcher);
+  }
+}
+
 export interface PricingInfrastructure {
   repository: PriceRepository;
-  createAvailabilityProvider: (fetcher: AvailabilityFetcher) => AvailabilityProvider;
+  availabilityProviderFactory: AvailabilityProviderFactory;
 }
 
 export function createPricingInfrastructure(): PricingInfrastructure {
   return {
     repository: new InMemoryPriceRepository(),
-    createAvailabilityProvider: (fetcher: AvailabilityFetcher) =>
-      new WarehouseAvailabilityAdapter(fetcher),
+    availabilityProviderFactory: new WarehouseAvailabilityProviderFactory(),
   };
 }

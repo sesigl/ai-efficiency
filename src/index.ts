@@ -3,6 +3,16 @@ import { createWarehouseUseCases } from "./modules/warehouse/di.js";
 import { createPricingUseCases } from "./modules/pricing/di.js";
 import { registerWarehouseRoutes } from "./api/warehouse.routes.js";
 import { registerPricingRoutes } from "./api/pricing.routes.js";
+import type { AvailabilityFetcher } from "./modules/pricing/infrastructure/WarehouseAvailabilityAdapter.js";
+import type { GetAvailability } from "./modules/warehouse/application/GetAvailability.js";
+
+class WarehouseAvailabilityFetcher implements AvailabilityFetcher {
+  constructor(private readonly getAvailability: GetAvailability) {}
+
+  fetchAvailability(sku: string) {
+    return this.getAvailability.execute({ sku });
+  }
+}
 
 export function createApp() {
   const fastify = Fastify({
@@ -10,8 +20,8 @@ export function createApp() {
   });
 
   const warehouseUseCases = createWarehouseUseCases();
-  const pricingUseCases = createPricingUseCases((sku: string) =>
-    warehouseUseCases.getAvailability.execute({ sku }),
+  const pricingUseCases = createPricingUseCases(
+    new WarehouseAvailabilityFetcher(warehouseUseCases.getAvailability),
   );
 
   registerWarehouseRoutes(fastify, warehouseUseCases);
