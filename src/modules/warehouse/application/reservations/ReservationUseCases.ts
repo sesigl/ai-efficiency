@@ -1,6 +1,6 @@
-import type { InventoryRepository } from "../domain/InventoryRepository.js";
-import { SKU } from "../domain/SKU.js";
-import { Quantity } from "../domain/Quantity.js";
+import type { InventoryRepository } from "../../domain/InventoryRepository.js";
+import { Quantity } from "../../domain/Quantity.js";
+import { SKU } from "../../domain/SKU.js";
 
 export interface ReserveStockCommand {
   sku: string;
@@ -16,10 +16,15 @@ export interface ReserveStockResult {
   expiresAt: Date;
 }
 
-export class ReserveStock {
+export interface ReleaseReservationCommand {
+  sku: string;
+  reservationId: string;
+}
+
+export class ReservationUseCases {
   constructor(private readonly repository: InventoryRepository) {}
 
-  execute(command: ReserveStockCommand): ReserveStockResult {
+  reserveStock(command: ReserveStockCommand): ReserveStockResult {
     const sku = SKU.create(command.sku);
     const quantity = Quantity.create(command.quantity);
 
@@ -38,5 +43,17 @@ export class ReserveStock {
       quantity: reservation.getQuantity().toNumber(),
       expiresAt: reservation.getExpiresAt(),
     };
+  }
+
+  releaseReservation(command: ReleaseReservationCommand): void {
+    const sku = SKU.create(command.sku);
+    const item = this.repository.findBySku(sku);
+
+    if (!item) {
+      throw new Error(`Inventory item not found: ${command.sku}`);
+    }
+
+    item.releaseReservation(command.reservationId);
+    this.repository.save(item);
   }
 }

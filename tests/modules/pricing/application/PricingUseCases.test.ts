@@ -11,19 +11,19 @@ describe("Pricing Use Cases", () => {
     it("creates price entry for new SKU", () => {
       const { useCases } = createUseCases();
 
-      useCases.setBasePrice.execute({ sku: "APPLE-001", priceInCents: 999 });
+      useCases.priceEntries.setBasePrice({ sku: "APPLE-001", priceInCents: 999 });
 
-      const entry = useCases.getPriceEntry.execute({ sku: "APPLE-001" });
+      const entry = useCases.priceEntries.getPriceEntry({ sku: "APPLE-001" });
       expect(entry?.basePriceInCents).toBe(999);
     });
 
     it("updates base price for existing SKU", () => {
       const { useCases } = createUseCases();
-      useCases.setBasePrice.execute({ sku: "APPLE-001", priceInCents: 999 });
+      useCases.priceEntries.setBasePrice({ sku: "APPLE-001", priceInCents: 999 });
 
-      useCases.setBasePrice.execute({ sku: "APPLE-001", priceInCents: 1299 });
+      useCases.priceEntries.setBasePrice({ sku: "APPLE-001", priceInCents: 1299 });
 
-      const entry = useCases.getPriceEntry.execute({ sku: "APPLE-001" });
+      const entry = useCases.priceEntries.getPriceEntry({ sku: "APPLE-001" });
       expect(entry?.basePriceInCents).toBe(1299);
     });
   });
@@ -31,12 +31,12 @@ describe("Pricing Use Cases", () => {
   describe("AddPromotion", () => {
     it("adds promotion to existing price entry", () => {
       const { useCases } = createUseCases();
-      useCases.setBasePrice.execute({ sku: "APPLE-001", priceInCents: 999 });
+      useCases.priceEntries.setBasePrice({ sku: "APPLE-001", priceInCents: 999 });
       const promo = createBlackFridayPromotion();
 
-      useCases.addPromotion.execute({ sku: "APPLE-001", ...promo });
+      useCases.promotions.addPromotion({ sku: "APPLE-001", ...promo });
 
-      const entry = useCases.getPriceEntry.execute({ sku: "APPLE-001" });
+      const entry = useCases.priceEntries.getPriceEntry({ sku: "APPLE-001" });
       expect(entry?.promotions).toHaveLength(1);
       expect(entry?.promotions[0]?.name).toBe("Black Friday");
     });
@@ -45,7 +45,7 @@ describe("Pricing Use Cases", () => {
       const { useCases } = createUseCases();
       const promo = createBlackFridayPromotion();
 
-      expect(() => useCases.addPromotion.execute({ sku: "UNKNOWN", ...promo })).toThrow(
+      expect(() => useCases.promotions.addPromotion({ sku: "UNKNOWN", ...promo })).toThrow(
         "Price entry not found",
       );
     });
@@ -54,12 +54,12 @@ describe("Pricing Use Cases", () => {
   describe("RemovePromotion", () => {
     it("removes promotion from price entry", () => {
       const { useCases } = createUseCases();
-      useCases.setBasePrice.execute({ sku: "APPLE-001", priceInCents: 999 });
-      useCases.addPromotion.execute({ sku: "APPLE-001", ...createBlackFridayPromotion() });
+      useCases.priceEntries.setBasePrice({ sku: "APPLE-001", priceInCents: 999 });
+      useCases.promotions.addPromotion({ sku: "APPLE-001", ...createBlackFridayPromotion() });
 
-      useCases.removePromotion.execute({ sku: "APPLE-001", promotionName: "Black Friday" });
+      useCases.promotions.removePromotion({ sku: "APPLE-001", promotionName: "Black Friday" });
 
-      const entry = useCases.getPriceEntry.execute({ sku: "APPLE-001" });
+      const entry = useCases.priceEntries.getPriceEntry({ sku: "APPLE-001" });
       expect(entry?.promotions).toHaveLength(0);
     });
   });
@@ -67,32 +67,32 @@ describe("Pricing Use Cases", () => {
   describe("CalculatePrice", () => {
     it("returns base price when no promotions", () => {
       const { useCases, fakeAvailability } = createUseCases();
-      useCases.setBasePrice.execute({ sku: "APPLE-001", priceInCents: 1000 });
+      useCases.priceEntries.setBasePrice({ sku: "APPLE-001", priceInCents: 1000 });
       fakeAvailability.setAvailability("APPLE-001", "HIGH");
 
-      const result = useCases.calculatePrice.execute({ sku: "APPLE-001" });
+      const result = useCases.priceEntries.calculatePrice({ sku: "APPLE-001" });
 
       expect(result.finalPrice.getCents()).toBe(1000);
     });
 
     it("applies full discount with high availability", () => {
       const { useCases, fakeAvailability } = createUseCases();
-      useCases.setBasePrice.execute({ sku: "APPLE-001", priceInCents: 1000 });
-      useCases.addPromotion.execute({ sku: "APPLE-001", ...createBlackFridayPromotion(30) });
+      useCases.priceEntries.setBasePrice({ sku: "APPLE-001", priceInCents: 1000 });
+      useCases.promotions.addPromotion({ sku: "APPLE-001", ...createBlackFridayPromotion(30) });
       fakeAvailability.setAvailability("APPLE-001", "HIGH");
 
-      const result = useCases.calculatePrice.execute({ sku: "APPLE-001" });
+      const result = useCases.priceEntries.calculatePrice({ sku: "APPLE-001" });
 
       expect(result.finalPrice.getCents()).toBe(700);
     });
 
     it("reduces discount with low availability", () => {
       const { useCases, fakeAvailability } = createUseCases();
-      useCases.setBasePrice.execute({ sku: "APPLE-001", priceInCents: 1000 });
-      useCases.addPromotion.execute({ sku: "APPLE-001", ...createBlackFridayPromotion(30) });
+      useCases.priceEntries.setBasePrice({ sku: "APPLE-001", priceInCents: 1000 });
+      useCases.promotions.addPromotion({ sku: "APPLE-001", ...createBlackFridayPromotion(30) });
       fakeAvailability.setAvailability("APPLE-001", "LOW");
 
-      const result = useCases.calculatePrice.execute({ sku: "APPLE-001" });
+      const result = useCases.priceEntries.calculatePrice({ sku: "APPLE-001" });
 
       expect(result.finalPrice.getCents()).toBe(850);
       expect(result.appliedDiscounts[0]?.originalPercentage).toBe(30);
@@ -101,11 +101,11 @@ describe("Pricing Use Cases", () => {
 
     it("applies no discount when out of stock", () => {
       const { useCases, fakeAvailability } = createUseCases();
-      useCases.setBasePrice.execute({ sku: "APPLE-001", priceInCents: 1000 });
-      useCases.addPromotion.execute({ sku: "APPLE-001", ...createBlackFridayPromotion(30) });
+      useCases.priceEntries.setBasePrice({ sku: "APPLE-001", priceInCents: 1000 });
+      useCases.promotions.addPromotion({ sku: "APPLE-001", ...createBlackFridayPromotion(30) });
       fakeAvailability.setAvailability("APPLE-001", "OUT_OF_STOCK");
 
-      const result = useCases.calculatePrice.execute({ sku: "APPLE-001" });
+      const result = useCases.priceEntries.calculatePrice({ sku: "APPLE-001" });
 
       expect(result.finalPrice.getCents()).toBe(1000);
       expect(result.appliedDiscounts[0]?.appliedPercentage).toBe(0);
