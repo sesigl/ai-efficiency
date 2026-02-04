@@ -1,5 +1,5 @@
-import { WarehouseAvailabilityFetcher } from "./api/warehouse-availability.fetcher.js";
 import { createPricingUseCases } from "./modules/pricing/di.js";
+import { WarehouseAvailabilityFetcher } from "./modules/pricing/infrastructure/WarehouseAvailabilityFetcher.js";
 import { createWarehouseUseCases } from "./modules/warehouse/di.js";
 
 export function createAppDependencies() {
