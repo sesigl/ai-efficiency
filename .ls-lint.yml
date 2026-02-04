@@ -1,0 +1,53 @@
+# ls-lint configuration for maintaining consistent file and directory naming
+# https://ls-lint.org/
+
+ls:
+  # Root level files - typically config files use kebab-case or dot notation
+  .root:
+    .js: kebab-case
+    .ts: kebab-case | PascalCase
+    .json: kebab-case
+    .md: PascalCase | kebab-case
+    .cjs: kebab-case
+    .mjs: kebab-case
+    .yml: kebab-case
+    .yaml: kebab-case
+
+  # Source directory - domain/application/infrastructure files use PascalCase
+  src:
+    .dir: kebab-case
+    .ts: PascalCase | kebab-case
+    .js: PascalCase | kebab-case
+
+  # Test directory - test files use PascalCase with .test.ts suffix
+  tests:
+    .dir: kebab-case
+    .ts: PascalCase | kebab-case
+    .js: PascalCase | kebab-case
+
+  # Architecture documentation
+  architecture:
+    .dir: kebab-case
+    .md: PascalCase | kebab-case
+
+  # Scripts directory
+  scripts:
+    .dir: kebab-case
+    .ts: kebab-case
+    .js: kebab-case
+
+ignore:
+  - node_modules
+  - dist
+  - .git
+  - .github
+  - coverage
+  - .vscode
+  - .idea
+  - build
+  - out
+  - tmp
+  - temp
+  - .cache
+  - .DS_Store
+  - "*.log"
