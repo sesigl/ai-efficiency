@@ -44,11 +44,10 @@ All code resides within strict **Bounded Contexts** at `src/modules/<ContextName
 
 ```text
 src/modules/<ContextName>/
-├── di.ts                 # Composition root - wires use cases with infrastructure
 ├── domain/               # Inner Core (Entities, VOs, Aggregates, Repository Interfaces)
 ├── application/          # Use Cases, Application Services
 └── infrastructure/       # Implementations of domain interfaces (Repositories, Adapters)
-    └── di.ts             # Infrastructure factory - creates implementations only
+    └── di.ts             # Composition root - wires use cases with infrastructure implementations
 
 src/shared/
 └── view/                 # contains formatting helper for views, eg to format dates
@@ -65,13 +64,11 @@ api -> application -> domain <- infrastructure
 
 * **Domain:** PURE. No imports from application or infrastructure.
 * **Application:** Can import domain only.
-* **Infrastructure:** Can import domain only. **Cannot import application.**
+* **Infrastructure:** Can import domain only. **Cannot import application (except di.ts).**
   * Implements domain interfaces (repositories, adapters, external clients)
-  * The `infrastructure/di.ts` only creates infrastructure implementations
-* **Module-level `di.ts`:** Composition root that wires application use cases with infrastructure
-  * Can import from application, domain, and infrastructure
-  * This is where dependency injection happens
-* **API Layer:** Can import from module-level exports (use cases)
+  * **Exception:** The `infrastructure/di.ts` is the composition root - it wires application use cases with infrastructure implementations
+  * Only di.ts can import from application, domain, and infrastructure layers
+* **API Layer:** Can import from infrastructure/di.ts exports (use cases)
 * **shared:** Contains cross-context contracts. Access controlled via dependency-cruiser rules.
 
 ## 6. Documentation Maintenance
