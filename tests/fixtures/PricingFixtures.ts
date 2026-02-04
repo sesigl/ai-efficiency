@@ -1,4 +1,4 @@
-import { createPricingContainer, type PricingContainer } from "../../src/modules/pricing/di.js";
+import { createPricingUseCases, type PricingUseCases } from "../../src/modules/pricing/di.js";
 import type { PromotionType } from "../../src/modules/pricing/domain/Promotion.js";
 import { InMemoryPriceRepository } from "../../src/modules/pricing/infrastructure/InMemoryPriceRepository.js";
 import {
@@ -27,18 +27,18 @@ export class FakeAvailabilityFetcher {
   }
 }
 
-export function createTestPricingContainerWithFakeAvailability(): {
-  container: PricingContainer;
+export function createTestPricingUseCasesWithFakeAvailability(): {
+  useCases: PricingUseCases;
   fakeAvailability: FakeAvailabilityFetcher;
   clearRepository: () => void;
 } {
   const repository = new InMemoryPriceRepository();
   const fakeAvailability = new FakeAvailabilityFetcher();
 
-  const container = createPricingContainer(fakeAvailability.fetch, repository);
+  const useCases = createPricingUseCases(fakeAvailability.fetch, repository);
 
   return {
-    container,
+    useCases,
     fakeAvailability,
     clearRepository: () => repository.clear(),
   };

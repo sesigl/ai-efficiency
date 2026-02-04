@@ -7,7 +7,7 @@ import { GetAvailability } from "./application/GetAvailability.js";
 import { GetInventoryItem } from "./application/GetInventoryItem.js";
 import { createWarehouseInfrastructure } from "./infrastructure/di.js";
 
-export interface WarehouseContainer {
+export interface WarehouseUseCases {
   repository: InventoryRepository;
   addStock: AddStock;
   removeStock: RemoveStock;
@@ -17,7 +17,7 @@ export interface WarehouseContainer {
   getInventoryItem: GetInventoryItem;
 }
 
-export function createWarehouseContainer(repository?: InventoryRepository): WarehouseContainer {
+export function createWarehouseUseCases(repository?: InventoryRepository): WarehouseUseCases {
   const infra = createWarehouseInfrastructure();
   const repo = repository ?? infra.repository;
 

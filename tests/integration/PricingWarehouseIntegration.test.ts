@@ -1,24 +1,24 @@
 import { describe, it, expect } from "vitest";
-import { createWarehouseContainer } from "../../src/modules/warehouse/di.js";
-import { createPricingContainer } from "../../src/modules/pricing/di.js";
+import { createWarehouseUseCases } from "../../src/modules/warehouse/di.js";
+import { createPricingUseCases } from "../../src/modules/pricing/di.js";
 import { promotionDates } from "../fixtures/PricingFixtures.js";
 
 describe("Pricing and Warehouse Integration", () => {
-  function createIntegratedContainers() {
-    const warehouseContainer = createWarehouseContainer();
-    const pricingContainer = createPricingContainer((sku: string) =>
-      warehouseContainer.getAvailability.execute({ sku }),
+  function createIntegratedUseCases() {
+    const warehouseUseCases = createWarehouseUseCases();
+    const pricingUseCases = createPricingUseCases((sku: string) =>
+      warehouseUseCases.getAvailability.execute({ sku }),
     );
-    return { warehouseContainer, pricingContainer };
+    return { warehouseUseCases, pricingUseCases };
   }
 
   describe("cross-context price calculation", () => {
     it("applies full Black Friday discount when warehouse has high stock", () => {
-      const { warehouseContainer, pricingContainer } = createIntegratedContainers();
-      warehouseContainer.addStock.execute({ sku: "TV-001", quantity: 100 });
-      pricingContainer.setBasePrice.execute({ sku: "TV-001", priceInCents: 50000 });
+      const { warehouseUseCases, pricingUseCases } = createIntegratedUseCases();
+      warehouseUseCases.addStock.execute({ sku: "TV-001", quantity: 100 });
+      pricingUseCases.setBasePrice.execute({ sku: "TV-001", priceInCents: 50000 });
       const { validFrom, validUntil } = promotionDates();
-      pricingContainer.addPromotion.execute({
+      pricingUseCases.addPromotion.execute({
         sku: "TV-001",
         name: "Black Friday",
         type: "BLACK_FRIDAY",
@@ -28,7 +28,7 @@ describe("Pricing and Warehouse Integration", () => {
         priority: 10,
       });
 
-      const price = pricingContainer.calculatePrice.execute({ sku: "TV-001" });
+      const price = pricingUseCases.calculatePrice.execute({ sku: "TV-001" });
 
       expect(price.basePrice.getCents()).toBe(50000);
       expect(price.finalPrice.getCents()).toBe(30000);
@@ -36,11 +36,11 @@ describe("Pricing and Warehouse Integration", () => {
     });
 
     it("reduces Black Friday discount when warehouse stock is low", () => {
-      const { warehouseContainer, pricingContainer } = createIntegratedContainers();
-      warehouseContainer.addStock.execute({ sku: "TV-001", quantity: 3 });
-      pricingContainer.setBasePrice.execute({ sku: "TV-001", priceInCents: 50000 });
+      const { warehouseUseCases, pricingUseCases } = createIntegratedUseCases();
+      warehouseUseCases.addStock.execute({ sku: "TV-001", quantity: 3 });
+      pricingUseCases.setBasePrice.execute({ sku: "TV-001", priceInCents: 50000 });
       const { validFrom, validUntil } = promotionDates();
-      pricingContainer.addPromotion.execute({
+      pricingUseCases.addPromotion.execute({
         sku: "TV-001",
         name: "Black Friday",
         type: "BLACK_FRIDAY",
@@ -50,7 +50,7 @@ describe("Pricing and Warehouse Integration", () => {
         priority: 10,
       });
 
-      const price = pricingContainer.calculatePrice.execute({ sku: "TV-001" });
+      const price = pricingUseCases.calculatePrice.execute({ sku: "TV-001" });
 
       expect(price.finalPrice.getCents()).toBe(40000);
       expect(price.appliedDiscounts[0]?.originalPercentage).toBe(40);
@@ -59,10 +59,10 @@ describe("Pricing and Warehouse Integration", () => {
     });
 
     it("skips discount when product is out of stock", () => {
-      const { pricingContainer } = createIntegratedContainers();
-      pricingContainer.setBasePrice.execute({ sku: "TV-001", priceInCents: 50000 });
+      const { pricingUseCases } = createIntegratedUseCases();
+      pricingUseCases.setBasePrice.execute({ sku: "TV-001", priceInCents: 50000 });
       const { validFrom, validUntil } = promotionDates();
-      pricingContainer.addPromotion.execute({
+      pricingUseCases.addPromotion.execute({
         sku: "TV-001",
         name: "Black Friday",
         type: "BLACK_FRIDAY",
@@ -72,18 +72,18 @@ describe("Pricing and Warehouse Integration", () => {
         priority: 10,
       });
 
-      const price = pricingContainer.calculatePrice.execute({ sku: "TV-001" });
+      const price = pricingUseCases.calculatePrice.execute({ sku: "TV-001" });
 
       expect(price.finalPrice.getCents()).toBe(50000);
       expect(price.appliedDiscounts[0]?.reason).toBe("No discount: item out of stock");
     });
 
     it("adjusts discount dynamically as stock changes", () => {
-      const { warehouseContainer, pricingContainer } = createIntegratedContainers();
-      warehouseContainer.addStock.execute({ sku: "TV-001", quantity: 50 });
-      pricingContainer.setBasePrice.execute({ sku: "TV-001", priceInCents: 50000 });
+      const { warehouseUseCases, pricingUseCases } = createIntegratedUseCases();
+      warehouseUseCases.addStock.execute({ sku: "TV-001", quantity: 50 });
+      pricingUseCases.setBasePrice.execute({ sku: "TV-001", priceInCents: 50000 });
       const { validFrom, validUntil } = promotionDates();
-      pricingContainer.addPromotion.execute({
+      pricingUseCases.addPromotion.execute({
         sku: "TV-001",
         name: "Black Friday",
         type: "BLACK_FRIDAY",
@@ -93,22 +93,22 @@ describe("Pricing and Warehouse Integration", () => {
         priority: 10,
       });
 
-      const priceWithHighStock = pricingContainer.calculatePrice.execute({ sku: "TV-001" });
+      const priceWithHighStock = pricingUseCases.calculatePrice.execute({ sku: "TV-001" });
       expect(priceWithHighStock.finalPrice.getCents()).toBe(30000);
 
-      warehouseContainer.removeStock.execute({ sku: "TV-001", quantity: 48 });
+      warehouseUseCases.removeStock.execute({ sku: "TV-001", quantity: 48 });
 
-      const priceWithLowStock = pricingContainer.calculatePrice.execute({ sku: "TV-001" });
+      const priceWithLowStock = pricingUseCases.calculatePrice.execute({ sku: "TV-001" });
       expect(priceWithLowStock.finalPrice.getCents()).toBe(40000);
     });
   });
 
   describe("bounded context isolation", () => {
     it("pricing only sees availability signal, not inventory internals", () => {
-      const { warehouseContainer } = createIntegratedContainers();
-      warehouseContainer.addStock.execute({ sku: "TV-001", quantity: 100 });
+      const { warehouseUseCases } = createIntegratedUseCases();
+      warehouseUseCases.addStock.execute({ sku: "TV-001", quantity: 100 });
 
-      const availability = warehouseContainer.getAvailability.execute({ sku: "TV-001" });
+      const availability = warehouseUseCases.getAvailability.execute({ sku: "TV-001" });
 
       expect(availability).toHaveProperty("sku");
       expect(availability).toHaveProperty("level");

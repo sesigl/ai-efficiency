@@ -1,6 +1,6 @@
 import Fastify from "fastify";
-import { createWarehouseContainer } from "./modules/warehouse/di.js";
-import { createPricingContainer } from "./modules/pricing/di.js";
+import { createWarehouseUseCases } from "./modules/warehouse/di.js";
+import { createPricingUseCases } from "./modules/pricing/di.js";
 import { registerWarehouseRoutes } from "./api/warehouse.routes.js";
 import { registerPricingRoutes } from "./api/pricing.routes.js";
 
@@ -9,19 +9,19 @@ export function createApp() {
     logger: true,
   });
 
-  const warehouseContainer = createWarehouseContainer();
-  const pricingContainer = createPricingContainer((sku: string) =>
-    warehouseContainer.getAvailability.execute({ sku }),
+  const warehouseUseCases = createWarehouseUseCases();
+  const pricingUseCases = createPricingUseCases((sku: string) =>
+    warehouseUseCases.getAvailability.execute({ sku }),
   );
 
-  registerWarehouseRoutes(fastify, warehouseContainer);
-  registerPricingRoutes(fastify, pricingContainer);
+  registerWarehouseRoutes(fastify, warehouseUseCases);
+  registerPricingRoutes(fastify, pricingUseCases);
 
   fastify.get("/health", async () => {
     return { status: "ok" };
   });
 
-  return { fastify, warehouseContainer, pricingContainer };
+  return { fastify, warehouseUseCases, pricingUseCases };
 }
 
 async function main() {

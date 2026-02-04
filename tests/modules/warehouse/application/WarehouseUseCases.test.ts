@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createTestWarehouseContainer, futureDate } from "../../../fixtures/WarehouseFixtures.js";
+import { createTestWarehouseUseCases, futureDate } from "../../../fixtures/WarehouseFixtures.js";
 
 describe("Warehouse Use Cases", () => {
-  const createContainer = () => createTestWarehouseContainer();
+  const createUseCases = () => createTestWarehouseUseCases();
 
   describe("AddStock", () => {
     it("creates inventory item when adding stock to new SKU", () => {
-      const { addStock, getInventoryItem } = createContainer();
+      const { addStock, getInventoryItem } = createUseCases();
 
       addStock.execute({ sku: "APPLE-001", quantity: 50 });
 
@@ -15,7 +15,7 @@ describe("Warehouse Use Cases", () => {
     });
 
     it("increases quantity when adding stock to existing SKU", () => {
-      const { addStock, getInventoryItem } = createContainer();
+      const { addStock, getInventoryItem } = createUseCases();
       addStock.execute({ sku: "APPLE-001", quantity: 30 });
 
       addStock.execute({ sku: "APPLE-001", quantity: 20 });
@@ -27,7 +27,7 @@ describe("Warehouse Use Cases", () => {
 
   describe("RemoveStock", () => {
     it("decreases quantity when removing stock", () => {
-      const { addStock, removeStock, getInventoryItem } = createContainer();
+      const { addStock, removeStock, getInventoryItem } = createUseCases();
       addStock.execute({ sku: "APPLE-001", quantity: 50 });
 
       removeStock.execute({ sku: "APPLE-001", quantity: 20 });
@@ -37,7 +37,7 @@ describe("Warehouse Use Cases", () => {
     });
 
     it("rejects removing from non-existent SKU", () => {
-      const { removeStock } = createContainer();
+      const { removeStock } = createUseCases();
 
       expect(() => removeStock.execute({ sku: "UNKNOWN", quantity: 10 })).toThrow(
         "Inventory item not found",
@@ -47,7 +47,7 @@ describe("Warehouse Use Cases", () => {
 
   describe("ReserveStock", () => {
     it("creates reservation and returns confirmation", () => {
-      const { addStock, reserveStock, getInventoryItem } = createContainer();
+      const { addStock, reserveStock, getInventoryItem } = createUseCases();
       addStock.execute({ sku: "APPLE-001", quantity: 50 });
 
       const result = reserveStock.execute({
@@ -66,7 +66,7 @@ describe("Warehouse Use Cases", () => {
 
   describe("ReleaseReservation", () => {
     it("restores available quantity after releasing reservation", () => {
-      const { addStock, reserveStock, releaseReservation, getInventoryItem } = createContainer();
+      const { addStock, reserveStock, releaseReservation, getInventoryItem } = createUseCases();
       addStock.execute({ sku: "APPLE-001", quantity: 50 });
       reserveStock.execute({
         sku: "APPLE-001",
@@ -84,7 +84,7 @@ describe("Warehouse Use Cases", () => {
 
   describe("GetAvailability", () => {
     it("returns HIGH availability for well-stocked item", () => {
-      const { addStock, getAvailability } = createContainer();
+      const { addStock, getAvailability } = createUseCases();
       addStock.execute({ sku: "APPLE-001", quantity: 100 });
 
       const signal = getAvailability.execute({ sku: "APPLE-001" });
@@ -94,7 +94,7 @@ describe("Warehouse Use Cases", () => {
     });
 
     it("returns OUT_OF_STOCK for unknown SKU", () => {
-      const { getAvailability } = createContainer();
+      const { getAvailability } = createUseCases();
 
       const signal = getAvailability.execute({ sku: "UNKNOWN" });
 
@@ -103,7 +103,7 @@ describe("Warehouse Use Cases", () => {
     });
 
     it("returns LOW availability when most stock is reserved", () => {
-      const { addStock, reserveStock, getAvailability } = createContainer();
+      const { addStock, reserveStock, getAvailability } = createUseCases();
       addStock.execute({ sku: "APPLE-001", quantity: 20 });
       reserveStock.execute({
         sku: "APPLE-001",

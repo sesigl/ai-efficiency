@@ -8,7 +8,7 @@ import { GetPriceEntry } from "./application/GetPriceEntry.js";
 import { createPricingInfrastructure } from "./infrastructure/di.js";
 import type { AvailabilityFetcher } from "./infrastructure/WarehouseAvailabilityAdapter.js";
 
-export interface PricingContainer {
+export interface PricingUseCases {
   repository: PriceRepository;
   setBasePrice: SetBasePrice;
   addPromotion: AddPromotion;
@@ -17,10 +17,10 @@ export interface PricingContainer {
   getPriceEntry: GetPriceEntry;
 }
 
-export function createPricingContainer(
+export function createPricingUseCases(
   availabilityFetcher: AvailabilityFetcher,
   repository?: PriceRepository,
-): PricingContainer {
+): PricingUseCases {
   const infra = createPricingInfrastructure();
   const repo = repository ?? infra.repository;
   const availabilityProvider: AvailabilityProvider =

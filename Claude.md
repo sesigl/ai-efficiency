@@ -71,7 +71,7 @@ api -> application -> domain <- infrastructure
 * **Module-level `di.ts`:** Composition root that wires application use cases with infrastructure
   * Can import from application, domain, and infrastructure
   * This is where dependency injection happens
-* **API Layer:** Can import from module-level exports (use cases and containers)
+* **API Layer:** Can import from module-level exports (use cases)
 * **shared:** Contains cross-context contracts. Access controlled via dependency-cruiser rules.
 
 ## 6. Documentation Maintenance
