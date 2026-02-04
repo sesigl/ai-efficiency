@@ -106,7 +106,7 @@ If any check fails, the feature is not complete. Fix all issues before committin
 ### Imports & Exports
 * **No export-only index.ts files:** Never create an `index.ts` that only exists to re-export modules. Always import classes, interfaces, and functions directly from their source files.
   * Bad: `import { SKU, Money } from "../domain/index.js"`
-  * Good: `import { SKU } from "../domain/SKU.js"` and `import { Money } from "../domain/Money.js"`
+  * Good: `import { SKU } from "../domain/Sku.js"` and `import { Money } from "../domain/Money.js"`
 * **Rationale:** Direct imports are explicit, improve IDE navigation, and prevent circular dependency issues.
 
 ### Type Definitions

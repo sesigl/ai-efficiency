@@ -5,7 +5,7 @@ import {
 import { InventoryItem } from "../../domain/InventoryItem.js";
 import type { InventoryItemRepository } from "../../domain/InventoryItemRepository.js";
 import { Quantity } from "../../domain/Quantity.js";
-import { SKU } from "../../domain/SKU.js";
+import { SKU } from "../../domain/Sku.js";
 
 export interface AddStockCommand {
   sku: string;

@@ -1,4 +1,4 @@
-import type { SKU } from "./SKU.js";
+import type { SKU } from "./Sku.js";
 import { Quantity } from "./Quantity.js";
 import { Reservation } from "./Reservation.js";
 import {

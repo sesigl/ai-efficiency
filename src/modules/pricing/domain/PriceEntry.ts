@@ -1,4 +1,4 @@
-import type { SKU } from "./SKU.js";
+import type { SKU } from "./Sku.js";
 import type { Money } from "./Money.js";
 import type { Promotion } from "./Promotion.js";
 import { CalculatedPrice, AppliedDiscount } from "./CalculatedPrice.js";
