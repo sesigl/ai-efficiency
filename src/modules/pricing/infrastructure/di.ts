@@ -1,20 +1,20 @@
 import { PriceEntryUseCases } from "../application/price-entry/PriceEntryUseCases.js";
 import { PromotionUseCases } from "../application/promotions/PromotionUseCases.js";
 import type { AvailabilityProvider } from "../domain/AvailabilityProvider.js";
-import type { PriceRepository } from "../domain/PriceRepository.js";
-import { InMemoryPriceRepository } from "./InMemoryPriceRepository.js";
+import type { PriceEntryRepository } from "../domain/PriceEntryRepository.js";
+import { InMemoryPriceEntryRepository } from "./InMemoryPriceEntryRepository.js";
 
 export interface PricingUseCases {
-  repository: PriceRepository;
+  repository: PriceEntryRepository;
   priceEntries: PriceEntryUseCases;
   promotions: PromotionUseCases;
 }
 
 export function createPricingUseCases(
   availabilityProvider: AvailabilityProvider,
-  repository?: PriceRepository,
+  repository?: PriceEntryRepository,
 ): PricingUseCases {
-  const repo = repository ?? new InMemoryPriceRepository();
+  const repo = repository ?? new InMemoryPriceEntryRepository();
 
   return {
     repository: repo,

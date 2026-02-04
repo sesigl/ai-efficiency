@@ -1,4 +1,4 @@
-import type { InventoryRepository } from "../../domain/InventoryRepository.js";
+import type { InventoryItemRepository } from "../../domain/InventoryItemRepository.js";
 import { Quantity } from "../../domain/Quantity.js";
 import { SKU } from "../../domain/SKU.js";
 
@@ -22,7 +22,7 @@ export interface ReleaseReservationCommand {
 }
 
 export class ReservationUseCases {
-  constructor(private readonly repository: InventoryRepository) {}
+  constructor(private readonly repository: InventoryItemRepository) {}
 
   reserveStock(command: ReserveStockCommand): ReserveStockResult {
     const sku = SKU.create(command.sku);

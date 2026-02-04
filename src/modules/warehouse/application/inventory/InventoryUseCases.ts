@@ -3,7 +3,7 @@ import {
   createAvailabilitySignal,
 } from "../../../../shared/contract/warehouse/AvailabilitySignal.js";
 import { InventoryItem } from "../../domain/InventoryItem.js";
-import type { InventoryRepository } from "../../domain/InventoryRepository.js";
+import type { InventoryItemRepository } from "../../domain/InventoryItemRepository.js";
 import { Quantity } from "../../domain/Quantity.js";
 import { SKU } from "../../domain/SKU.js";
 
@@ -39,7 +39,7 @@ interface ReservationDTO {
 }
 
 export class InventoryUseCases {
-  constructor(private readonly repository: InventoryRepository) {}
+  constructor(private readonly repository: InventoryItemRepository) {}
 
   addStock(command: AddStockCommand): void {
     const sku = SKU.create(command.sku);
