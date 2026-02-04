@@ -1,26 +1,27 @@
 import { createPricingUseCases, type PricingUseCases } from "../../src/modules/pricing/di.js";
 import type { PromotionType } from "../../src/modules/pricing/domain/Promotion.js";
 import { InMemoryPriceRepository } from "../../src/modules/pricing/infrastructure/InMemoryPriceRepository.js";
+import type { AvailabilityFetcher } from "../../src/modules/pricing/infrastructure/WarehouseAvailabilityAdapter.js";
 import {
   type AvailabilitySignal,
   createAvailabilitySignal,
   type AvailabilityLevel,
 } from "../../src/shared/contract/warehouse/AvailabilitySignal.js";
 
-export class FakeAvailabilityFetcher {
+export class FakeAvailabilityFetcher implements AvailabilityFetcher {
   private availabilities: Map<string, AvailabilitySignal> = new Map();
 
   setAvailability(sku: string, level: AvailabilityLevel): void {
     this.availabilities.set(sku.toUpperCase(), createAvailabilitySignal(sku.toUpperCase(), level));
   }
 
-  fetch = (sku: string): AvailabilitySignal => {
+  fetchAvailability(sku: string): AvailabilitySignal {
     const signal = this.availabilities.get(sku.toUpperCase());
     if (signal) {
       return signal;
     }
     return createAvailabilitySignal(sku.toUpperCase(), "HIGH");
-  };
+  }
 
   clear(): void {
     this.availabilities.clear();
@@ -35,7 +36,7 @@ export function createTestPricingUseCasesWithFakeAvailability(): {
   const repository = new InMemoryPriceRepository();
   const fakeAvailability = new FakeAvailabilityFetcher();
 
-  const useCases = createPricingUseCases(fakeAvailability.fetch, repository);
+  const useCases = createPricingUseCases(fakeAvailability, repository);
 
   return {
     useCases,

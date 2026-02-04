@@ -24,7 +24,7 @@ export function createPricingUseCases(
   const infra = createPricingInfrastructure();
   const repo = repository ?? infra.repository;
   const availabilityProvider: AvailabilityProvider =
-    infra.createAvailabilityProvider(availabilityFetcher);
+    infra.availabilityProviderFactory.create(availabilityFetcher);
 
   return {
     repository: repo,
