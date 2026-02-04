@@ -1,4 +1,7 @@
-import { createWarehouseUseCases, type WarehouseUseCases } from "../../src/modules/warehouse/di.js";
+import {
+  createWarehouseUseCases,
+  type WarehouseUseCases,
+} from "../../src/modules/warehouse/infrastructure/di.js";
 import { InMemoryInventoryItemRepository } from "../../src/modules/warehouse/infrastructure/InMemoryInventoryItemRepository.js";
 
 export function createTestWarehouseUseCases(): WarehouseUseCases & {
