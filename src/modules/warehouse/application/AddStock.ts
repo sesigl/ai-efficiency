@@ -1,4 +1,4 @@
-import { InventoryRepository, SKU, Quantity, InventoryItem } from '../domain/index.js';
+import { type InventoryRepository, SKU, Quantity, InventoryItem } from "../domain/index.js";
 
 export interface AddStockCommand {
   sku: string;

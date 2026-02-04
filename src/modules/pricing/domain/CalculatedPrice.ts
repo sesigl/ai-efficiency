@@ -1,11 +1,11 @@
-import { Money } from './Money.js';
+import type { Money } from "./Money.js";
 
 export class AppliedDiscount {
   constructor(
     public readonly promotionName: string,
     public readonly originalPercentage: number,
     public readonly appliedPercentage: number,
-    public readonly reason: string
+    public readonly reason: string,
   ) {}
 }
 
@@ -14,7 +14,7 @@ export class CalculatedPrice {
     public readonly sku: string,
     public readonly basePrice: Money,
     public readonly finalPrice: Money,
-    public readonly appliedDiscounts: AppliedDiscount[]
+    public readonly appliedDiscounts: AppliedDiscount[],
   ) {}
 
   getTotalDiscountPercentage(): number {

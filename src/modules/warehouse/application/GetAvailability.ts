@@ -1,5 +1,8 @@
-import { InventoryRepository, SKU } from '../domain/index.js';
-import { AvailabilitySignal, createAvailabilitySignal } from '../../../shared/contract/warehouse/index.js';
+import { type InventoryRepository, SKU } from "../domain/index.js";
+import {
+  type AvailabilitySignal,
+  createAvailabilitySignal,
+} from "../../../shared/contract/warehouse/index.js";
 
 export interface GetAvailabilityQuery {
   sku: string;
@@ -13,7 +16,7 @@ export class GetAvailability {
     const item = this.repository.findBySku(sku);
 
     if (!item) {
-      return createAvailabilitySignal(query.sku, 'OUT_OF_STOCK');
+      return createAvailabilitySignal(query.sku, "OUT_OF_STOCK");
     }
 
     return item.toAvailabilitySignal();

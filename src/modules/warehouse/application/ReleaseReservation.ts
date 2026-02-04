@@ -1,4 +1,4 @@
-import { InventoryRepository, SKU } from '../domain/index.js';
+import { type InventoryRepository, SKU } from "../domain/index.js";
 
 export interface ReleaseReservationCommand {
   sku: string;

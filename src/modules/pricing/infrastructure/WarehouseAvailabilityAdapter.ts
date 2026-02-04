@@ -1,11 +1,12 @@
-import { AvailabilityProvider } from '../domain/index.js';
-import { AvailabilitySignal } from '../../../shared/contract/warehouse/index.js';
-import { GetAvailability } from '../../warehouse/application/index.js';
+import type { AvailabilityProvider } from "../domain/index.js";
+import type { AvailabilitySignal } from "../../../shared/contract/warehouse/index.js";
+
+export type AvailabilityFetcher = (sku: string) => AvailabilitySignal;
 
 export class WarehouseAvailabilityAdapter implements AvailabilityProvider {
-  constructor(private readonly warehouseGetAvailability: GetAvailability) {}
+  constructor(private readonly fetchAvailability: AvailabilityFetcher) {}
 
   getAvailability(sku: string): AvailabilitySignal {
-    return this.warehouseGetAvailability.execute({ sku });
+    return this.fetchAvailability(sku);
   }
 }

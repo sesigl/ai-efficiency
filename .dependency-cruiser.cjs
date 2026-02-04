@@ -59,6 +59,17 @@ module.exports = {
     },
 
     // ===========================================
+    // INFRASTRUCTURE LAYER RULES
+    // ===========================================
+    {
+      name: 'infrastructure-cannot-import-application',
+      comment: 'Infrastructure layer cannot import from application layer. Infrastructure implements domain interfaces.',
+      severity: 'error',
+      from: { path: 'src/modules/[^/]+/infrastructure' },
+      to: { path: 'src/modules/[^/]+/application' },
+    },
+
+    // ===========================================
     // GENERAL CLEAN ARCHITECTURE RULES
     // ===========================================
     {

@@ -1,5 +1,5 @@
-import { PriceEntry } from './PriceEntry.js';
-import { SKU } from './SKU.js';
+import type { PriceEntry } from "./PriceEntry.js";
+import type { SKU } from "./SKU.js";
 
 export interface PriceRepository {
   findBySku(sku: SKU): PriceEntry | undefined;

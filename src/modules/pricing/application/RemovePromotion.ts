@@ -1,9 +1,9 @@
-import { PriceRepository, SKU } from '../domain/index.js';
+import { type PriceRepository, SKU } from "../domain/index.js";
 
 export class RemovePromotionCommand {
   constructor(
     public readonly sku: string,
-    public readonly promotionName: string
+    public readonly promotionName: string,
   ) {}
 }
 

@@ -3,10 +3,10 @@ export class SKU {
 
   static create(value: string): SKU {
     if (!value || value.trim().length === 0) {
-      throw new Error('SKU cannot be empty');
+      throw new Error("SKU cannot be empty");
     }
     if (!/^[A-Z0-9-]+$/i.test(value)) {
-      throw new Error('SKU must contain only alphanumeric characters and hyphens');
+      throw new Error("SKU must contain only alphanumeric characters and hyphens");
     }
     return new SKU(value.toUpperCase());
   }

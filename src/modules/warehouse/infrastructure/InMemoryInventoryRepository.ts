@@ -1,4 +1,4 @@
-import { InventoryRepository, InventoryItem, SKU } from '../domain/index.js';
+import type { InventoryRepository, InventoryItem, SKU } from "../domain/index.js";
 
 export class InMemoryInventoryRepository implements InventoryRepository {
   private items: Map<string, InventoryItem> = new Map();

@@ -1,16 +1,21 @@
-import { PriceRepository, SKU, AvailabilityProvider, CalculatedPrice } from '../domain/index.js';
+import {
+  type PriceRepository,
+  SKU,
+  type AvailabilityProvider,
+  type CalculatedPrice,
+} from "../domain/index.js";
 
 export class CalculatePriceQuery {
   constructor(
     public readonly sku: string,
-    public readonly at: Date = new Date()
+    public readonly at: Date = new Date(),
   ) {}
 }
 
 export class CalculatePrice {
   constructor(
     private readonly repository: PriceRepository,
-    private readonly availabilityProvider: AvailabilityProvider
+    private readonly availabilityProvider: AvailabilityProvider,
   ) {}
 
   execute(query: CalculatePriceQuery): CalculatedPrice {

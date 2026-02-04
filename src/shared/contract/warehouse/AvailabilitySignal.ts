@@ -1,4 +1,4 @@
-export type AvailabilityLevel = 'HIGH' | 'MEDIUM' | 'LOW' | 'OUT_OF_STOCK';
+export type AvailabilityLevel = "HIGH" | "MEDIUM" | "LOW" | "OUT_OF_STOCK";
 
 export interface AvailabilitySignal {
   readonly sku: string;
@@ -9,12 +9,12 @@ export interface AvailabilitySignal {
 
 export function createAvailabilitySignal(
   sku: string,
-  level: AvailabilityLevel
+  level: AvailabilityLevel,
 ): AvailabilitySignal {
   return {
     sku,
     level,
-    isLow: level === 'LOW',
-    isOutOfStock: level === 'OUT_OF_STOCK',
+    isLow: level === "LOW",
+    isOutOfStock: level === "OUT_OF_STOCK",
   };
 }

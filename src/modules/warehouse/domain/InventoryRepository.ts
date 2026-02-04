@@ -1,5 +1,5 @@
-import { InventoryItem } from './InventoryItem.js';
-import { SKU } from './SKU.js';
+import type { InventoryItem } from "./InventoryItem.js";
+import type { SKU } from "./SKU.js";
 
 export interface InventoryRepository {
   findBySku(sku: SKU): InventoryItem | undefined;

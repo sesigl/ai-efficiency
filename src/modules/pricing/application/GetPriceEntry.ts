@@ -1,4 +1,4 @@
-import { PriceRepository, SKU, PromotionType } from '../domain/index.js';
+import { type PriceRepository, SKU, type PromotionType } from "../domain/index.js";
 
 export class GetPriceEntryQuery {
   constructor(public readonly sku: string) {}
@@ -9,7 +9,7 @@ export class PriceEntryDTO {
     public readonly sku: string,
     public readonly basePriceInCents: number,
     public readonly currency: string,
-    public readonly promotions: PromotionDTO[]
+    public readonly promotions: PromotionDTO[],
   ) {}
 }
 
@@ -20,7 +20,7 @@ export class PromotionDTO {
     public readonly discountPercentage: number,
     public readonly validFrom: Date,
     public readonly validUntil: Date,
-    public readonly priority: number
+    public readonly priority: number,
   ) {}
 }
 
@@ -39,14 +39,19 @@ export class GetPriceEntry {
       entry.getSku().toString(),
       entry.getBasePrice().getCents(),
       entry.getBasePrice().getCurrency(),
-      entry.getPromotions().map(p => new PromotionDTO(
-        p.getName(),
-        p.getType(),
-        p.getDiscountPercentage(),
-        p.getValidFrom(),
-        p.getValidUntil(),
-        p.getPriority()
-      ))
+      entry
+        .getPromotions()
+        .map(
+          (p) =>
+            new PromotionDTO(
+              p.getName(),
+              p.getType(),
+              p.getDiscountPercentage(),
+              p.getValidFrom(),
+              p.getValidUntil(),
+              p.getPriority(),
+            ),
+        ),
     );
   }
 }

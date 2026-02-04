@@ -1,23 +1,29 @@
-import { createPricingContainer, PricingContainer, PromotionType } from '../../src/modules/pricing/index.js';
-import { InMemoryPriceRepository } from '../../src/modules/pricing/infrastructure/InMemoryPriceRepository.js';
-import { AvailabilityProvider } from '../../src/modules/pricing/domain/AvailabilityProvider.js';
-import { AvailabilitySignal, createAvailabilitySignal, AvailabilityLevel } from '../../src/shared/contract/warehouse/index.js';
-import { GetAvailability } from '../../src/modules/warehouse/application/index.js';
+import {
+  createPricingContainer,
+  type PricingContainer,
+  type PromotionType,
+} from "../../src/modules/pricing/index.js";
+import { InMemoryPriceRepository } from "../../src/modules/pricing/infrastructure/InMemoryPriceRepository.js";
+import {
+  type AvailabilitySignal,
+  createAvailabilitySignal,
+  type AvailabilityLevel,
+} from "../../src/shared/contract/warehouse/index.js";
 
-export class FakeAvailabilityProvider implements AvailabilityProvider {
+export class FakeAvailabilityFetcher {
   private availabilities: Map<string, AvailabilitySignal> = new Map();
 
   setAvailability(sku: string, level: AvailabilityLevel): void {
     this.availabilities.set(sku.toUpperCase(), createAvailabilitySignal(sku.toUpperCase(), level));
   }
 
-  getAvailability(sku: string): AvailabilitySignal {
+  fetch = (sku: string): AvailabilitySignal => {
     const signal = this.availabilities.get(sku.toUpperCase());
     if (signal) {
       return signal;
     }
-    return createAvailabilitySignal(sku.toUpperCase(), 'HIGH');
-  }
+    return createAvailabilitySignal(sku.toUpperCase(), "HIGH");
+  };
 
   clear(): void {
     this.availabilities.clear();
@@ -26,17 +32,13 @@ export class FakeAvailabilityProvider implements AvailabilityProvider {
 
 export function createTestPricingContainerWithFakeAvailability(): {
   container: PricingContainer;
-  fakeAvailability: FakeAvailabilityProvider;
+  fakeAvailability: FakeAvailabilityFetcher;
   clearRepository: () => void;
 } {
   const repository = new InMemoryPriceRepository();
-  const fakeAvailability = new FakeAvailabilityProvider();
+  const fakeAvailability = new FakeAvailabilityFetcher();
 
-  const fakeGetAvailability = {
-    execute: (query: { sku: string }) => fakeAvailability.getAvailability(query.sku),
-  } as GetAvailability;
-
-  const container = createPricingContainer(fakeGetAvailability, repository);
+  const container = createPricingContainer(fakeAvailability.fetch, repository);
 
   return {
     container,
@@ -45,7 +47,10 @@ export function createTestPricingContainerWithFakeAvailability(): {
   };
 }
 
-export function promotionDates(startDaysFromNow: number = -1, endDaysFromNow: number = 30): { validFrom: Date; validUntil: Date } {
+export function promotionDates(
+  startDaysFromNow: number = -1,
+  endDaysFromNow: number = 30,
+): { validFrom: Date; validUntil: Date } {
   const validFrom = new Date();
   validFrom.setDate(validFrom.getDate() + startDaysFromNow);
 
@@ -57,7 +62,7 @@ export function promotionDates(startDaysFromNow: number = -1, endDaysFromNow: nu
 
 export function createBlackFridayPromotion(
   discountPercentage: number = 30,
-  dates = promotionDates()
+  dates = promotionDates(),
 ): {
   name: string;
   type: PromotionType;
@@ -67,8 +72,8 @@ export function createBlackFridayPromotion(
   priority: number;
 } {
   return {
-    name: 'Black Friday',
-    type: 'BLACK_FRIDAY',
+    name: "Black Friday",
+    type: "BLACK_FRIDAY",
     discountPercentage,
     validFrom: dates.validFrom,
     validUntil: dates.validUntil,

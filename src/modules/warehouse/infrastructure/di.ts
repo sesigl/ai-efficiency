@@ -1,34 +1,12 @@
-import { InventoryRepository } from '../domain/index.js';
-import {
-  AddStock,
-  RemoveStock,
-  ReserveStock,
-  ReleaseReservation,
-  GetAvailability,
-  GetInventoryItem,
-} from '../application/index.js';
-import { InMemoryInventoryRepository } from './InMemoryInventoryRepository.js';
+import type { InventoryRepository } from "../domain/index.js";
+import { InMemoryInventoryRepository } from "./InMemoryInventoryRepository.js";
 
-export interface WarehouseContainer {
+export interface WarehouseInfrastructure {
   repository: InventoryRepository;
-  addStock: AddStock;
-  removeStock: RemoveStock;
-  reserveStock: ReserveStock;
-  releaseReservation: ReleaseReservation;
-  getAvailability: GetAvailability;
-  getInventoryItem: GetInventoryItem;
 }
 
-export function createWarehouseContainer(
-  repository: InventoryRepository = new InMemoryInventoryRepository()
-): WarehouseContainer {
+export function createWarehouseInfrastructure(): WarehouseInfrastructure {
   return {
-    repository,
-    addStock: new AddStock(repository),
-    removeStock: new RemoveStock(repository),
-    reserveStock: new ReserveStock(repository),
-    releaseReservation: new ReleaseReservation(repository),
-    getAvailability: new GetAvailability(repository),
-    getInventoryItem: new GetInventoryItem(repository),
+    repository: new InMemoryInventoryRepository(),
   };
 }

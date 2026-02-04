@@ -1,21 +1,21 @@
-import { Quantity } from './Quantity.js';
+import type { Quantity } from "./Quantity.js";
 
 export class Reservation {
   private constructor(
     private readonly id: string,
     private readonly quantity: Quantity,
-    private readonly expiresAt: Date
+    private readonly expiresAt: Date,
   ) {}
 
   static create(id: string, quantity: Quantity, expiresAt: Date): Reservation {
     if (!id || id.trim().length === 0) {
-      throw new Error('Reservation ID cannot be empty');
+      throw new Error("Reservation ID cannot be empty");
     }
     if (quantity.isZero()) {
-      throw new Error('Reservation quantity must be greater than zero');
+      throw new Error("Reservation quantity must be greater than zero");
     }
     if (expiresAt <= new Date()) {
-      throw new Error('Reservation expiration must be in the future');
+      throw new Error("Reservation expiration must be in the future");
     }
     return new Reservation(id, quantity, expiresAt);
   }

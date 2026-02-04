@@ -1,4 +1,4 @@
-import { InventoryRepository, SKU } from '../domain/index.js';
+import { type InventoryRepository, SKU } from "../domain/index.js";
 
 export interface GetInventoryItemQuery {
   sku: string;
@@ -32,7 +32,7 @@ export class GetInventoryItem {
       sku: item.getSku().toString(),
       quantity: item.getQuantity().toNumber(),
       availableQuantity: item.getAvailableQuantity().toNumber(),
-      reservations: item.getReservations().map(r => ({
+      reservations: item.getReservations().map((r) => ({
         id: r.getId(),
         quantity: r.getQuantity().toNumber(),
         expiresAt: r.getExpiresAt(),

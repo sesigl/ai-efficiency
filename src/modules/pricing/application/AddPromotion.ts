@@ -1,4 +1,4 @@
-import { PriceRepository, SKU, Promotion, PromotionType } from '../domain/index.js';
+import { type PriceRepository, SKU, Promotion, type PromotionType } from "../domain/index.js";
 
 export class AddPromotionCommand {
   constructor(
@@ -8,7 +8,7 @@ export class AddPromotionCommand {
     public readonly discountPercentage: number,
     public readonly validFrom: Date,
     public readonly validUntil: Date,
-    public readonly priority: number = 0
+    public readonly priority: number = 0,
   ) {}
 }
 
@@ -29,7 +29,7 @@ export class AddPromotion {
       command.discountPercentage,
       command.validFrom,
       command.validUntil,
-      command.priority
+      command.priority,
     );
 
     entry.addPromotion(promotion);

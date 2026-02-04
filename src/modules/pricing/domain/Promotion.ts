@@ -1,4 +1,4 @@
-export type PromotionType = 'BLACK_FRIDAY' | 'CLEARANCE' | 'SEASONAL' | 'BULK_DISCOUNT';
+export type PromotionType = "BLACK_FRIDAY" | "CLEARANCE" | "SEASONAL" | "BULK_DISCOUNT";
 
 export class Promotion {
   private constructor(
@@ -7,7 +7,7 @@ export class Promotion {
     private readonly discountPercentage: number,
     private readonly validFrom: Date,
     private readonly validUntil: Date,
-    private readonly priority: number
+    private readonly priority: number,
   ) {}
 
   static create(
@@ -16,16 +16,16 @@ export class Promotion {
     discountPercentage: number,
     validFrom: Date,
     validUntil: Date,
-    priority: number = 0
+    priority: number = 0,
   ): Promotion {
     if (!name || name.trim().length === 0) {
-      throw new Error('Promotion name cannot be empty');
+      throw new Error("Promotion name cannot be empty");
     }
     if (discountPercentage < 0 || discountPercentage > 100) {
-      throw new Error('Discount percentage must be between 0 and 100');
+      throw new Error("Discount percentage must be between 0 and 100");
     }
     if (validFrom >= validUntil) {
-      throw new Error('Valid from date must be before valid until date');
+      throw new Error("Valid from date must be before valid until date");
     }
     return new Promotion(name, type, discountPercentage, validFrom, validUntil, priority);
   }

@@ -1,2 +1,2 @@
-export * from './application/index.js';
-export { createWarehouseContainer, WarehouseContainer } from './infrastructure/di.js';
+export * from "./application/index.js";
+export { createWarehouseContainer, WarehouseContainer } from "./di.js";

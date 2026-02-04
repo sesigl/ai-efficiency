@@ -1,10 +1,10 @@
-import { PriceRepository, SKU, Money, PriceEntry } from '../domain/index.js';
+import { type PriceRepository, SKU, Money, PriceEntry } from "../domain/index.js";
 
 export class SetBasePriceCommand {
   constructor(
     public readonly sku: string,
     public readonly priceInCents: number,
-    public readonly currency: string = 'USD'
+    public readonly currency: string = "USD",
   ) {}
 }
 

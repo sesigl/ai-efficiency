@@ -1,2 +1,2 @@
-export { InMemoryInventoryRepository } from './InMemoryInventoryRepository.js';
-export { createWarehouseContainer, WarehouseContainer } from './di.js';
+export { InMemoryInventoryRepository } from "./InMemoryInventoryRepository.js";
+export { createWarehouseInfrastructure, WarehouseInfrastructure } from "./di.js";

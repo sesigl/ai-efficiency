@@ -45,24 +45,35 @@ All code resides within strict **Bounded Contexts** at `src/modules/<ContextName
 
 ```text
 src/modules/<ContextName>/
+├── di.ts                 # Composition root - wires use cases with infrastructure
 ├── domain/               # Inner Core (Entities, VOs, Aggregates, Repository Interfaces)
 ├── application/          # Use Cases, Application Services
-└── infrastructure/       # Implementations, Adapters, Transaction Handling
-    └── di.ts             # REQUIRED: DI container setup for this module
+└── infrastructure/       # Implementations of domain interfaces (Repositories, Adapters)
+    └── di.ts             # Infrastructure factory - creates implementations only
 
 src/shared/
-└── view                  # contains formatting helper for views, eg to format dates
+└── view/                 # contains formatting helper for views, eg to format dates
 └── contract/<bounded-context-supplier>/  # contains exposed files to other bounded contexts which are the contract between both
 ```
 
 ## 5. Dependency Rules
-Enforced via dependency-cruiser.
+Enforced via dependency-cruiser. **Build fails on violations.**
+
+The dependency flow is:
+```
+api -> application -> domain <- infrastructure
+```
+
 * **Domain:** PURE. No imports from application or infrastructure.
-* **Application:**
-    * Can import domain.
-    * Can import infrastructure (strictly for technical concerns like Transaction Management, Unit of Work, preventing domain leakage).
-* **Infrastructure:** Can import domain.
-* **shared:** outside of modules are shared dependencies. use cases narrow contracts, and via dependency cruiser it will be defined what bounded context can access what shared contract files. and for web some simple helper for universal formatting
+* **Application:** Can import domain only.
+* **Infrastructure:** Can import domain only. **Cannot import application.**
+  * Implements domain interfaces (repositories, adapters, external clients)
+  * The `infrastructure/di.ts` only creates infrastructure implementations
+* **Module-level `di.ts`:** Composition root that wires application use cases with infrastructure
+  * Can import from application, domain, and infrastructure
+  * This is where dependency injection happens
+* **API Layer:** Can import from module-level exports (use cases and containers)
+* **shared:** Contains cross-context contracts. Access controlled via dependency-cruiser rules.
 
 ## 6. Documentation Maintenance
 * **Trigger:** Creation of a new Bounded Context or Domain Concept.
@@ -76,7 +87,23 @@ Enforced via dependency-cruiser.
 * **Validation:** Use Fastify's built-in JSON Schema validation for request/response validation
 * **Diagrams:** Use Mermaid for all architectural diagrams
 
-## 8. Bounded Context Overview
+## 8. Verification
+**Run `npm run verify` after each feature to ensure correctness.**
+
+This command executes all mandatory checks:
+1. **Biome format check:** Ensures consistent code formatting
+2. **Biome lint:** Validates code quality rules
+3. **dependency-cruiser:** Validates architectural rules (bounded context isolation, layer dependencies)
+4. **TypeScript build:** Ensures type safety
+5. **Tests:** Runs the full test suite
+
+If any check fails, the feature is not complete. Fix all issues before committing.
+
+**Useful commands:**
+* `npm run format` - Auto-fix formatting issues
+* `npm run lint` - Check for lint issues (use `npx biome lint --write` to auto-fix)
+
+## 9. Bounded Context Overview
 
 ### Pricing Context
 - **Responsibility:** Calculate prices for products, apply promotions and discounts

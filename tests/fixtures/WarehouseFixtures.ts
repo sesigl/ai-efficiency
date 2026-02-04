@@ -1,7 +1,12 @@
-import { createWarehouseContainer, WarehouseContainer } from '../../src/modules/warehouse/index.js';
-import { InMemoryInventoryRepository } from '../../src/modules/warehouse/infrastructure/InMemoryInventoryRepository.js';
+import {
+  createWarehouseContainer,
+  type WarehouseContainer,
+} from "../../src/modules/warehouse/index.js";
+import { InMemoryInventoryRepository } from "../../src/modules/warehouse/infrastructure/InMemoryInventoryRepository.js";
 
-export function createTestWarehouseContainer(): WarehouseContainer & { clearRepository: () => void } {
+export function createTestWarehouseContainer(): WarehouseContainer & {
+  clearRepository: () => void;
+} {
   const repository = new InMemoryInventoryRepository();
   const container = createWarehouseContainer(repository);
   return {

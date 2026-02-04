@@ -3,10 +3,10 @@ export class Quantity {
 
   static create(value: number): Quantity {
     if (!Number.isInteger(value)) {
-      throw new Error('Quantity must be an integer');
+      throw new Error("Quantity must be an integer");
     }
     if (value < 0) {
-      throw new Error('Quantity cannot be negative');
+      throw new Error("Quantity cannot be negative");
     }
     return new Quantity(value);
   }
@@ -26,7 +26,7 @@ export class Quantity {
   subtract(other: Quantity): Quantity {
     const result = this.value - other.value;
     if (result < 0) {
-      throw new Error('Cannot subtract: would result in negative quantity');
+      throw new Error("Cannot subtract: would result in negative quantity");
     }
     return new Quantity(result);
   }
