@@ -1,4 +1,7 @@
-import { createPricingUseCases, type PricingUseCases } from "../../src/modules/pricing/di.js";
+import {
+  createPricingUseCases,
+  type PricingUseCases,
+} from "../../src/modules/pricing/infrastructure/di.js";
 import type { PromotionType } from "../../src/modules/pricing/domain/Promotion.js";
 import { InMemoryPriceEntryRepository } from "../../src/modules/pricing/infrastructure/InMemoryPriceEntryRepository.js";
 import type { AvailabilityProvider } from "../../src/modules/pricing/domain/AvailabilityProvider.js";

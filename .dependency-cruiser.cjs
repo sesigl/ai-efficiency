@@ -63,9 +63,12 @@ module.exports = {
     // ===========================================
     {
       name: 'infrastructure-cannot-import-application',
-      comment: 'Infrastructure layer cannot import from application layer. Infrastructure implements domain interfaces.',
+      comment: 'Infrastructure layer cannot import from application layer (except di.ts composition root)',
       severity: 'error',
-      from: { path: 'src/modules/[^/]+/infrastructure' },
+      from: {
+        path: 'src/modules/[^/]+/infrastructure',
+        pathNot: 'src/modules/[^/]+/infrastructure/di\\.ts$',
+      },
       to: { path: 'src/modules/[^/]+/application' },
     },
 

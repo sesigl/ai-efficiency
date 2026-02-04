@@ -1,6 +1,6 @@
-import { createPricingUseCases } from "./modules/pricing/di.js";
+import { createPricingUseCases } from "./modules/pricing/infrastructure/di.js";
 import type { AvailabilityProvider } from "./modules/pricing/domain/AvailabilityProvider.js";
-import { createWarehouseUseCases } from "./modules/warehouse/di.js";
+import { createWarehouseUseCases } from "./modules/warehouse/infrastructure/di.js";
 import type { InventoryUseCases } from "./modules/warehouse/application/inventory/InventoryUseCases.js";
 
 class WarehouseAvailabilityAdapter implements AvailabilityProvider {
