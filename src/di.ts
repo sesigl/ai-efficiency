@@ -1,5 +1,5 @@
 import { createPricingUseCases } from "./modules/pricing/infrastructure/di.js";
-import type { AvailabilityProvider } from "./modules/pricing/domain/AvailabilityProvider.js";
+import type { AvailabilityProvider } from "./modules/pricing/domain/price-entry/AvailabilityProvider.js";
 import { createWarehouseUseCases } from "./modules/warehouse/infrastructure/di.js";
 import type { InventoryUseCases } from "./modules/warehouse/application/inventory/InventoryUseCases.js";
 

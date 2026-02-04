@@ -1,6 +1,6 @@
-import type { InventoryItemRepository } from "../../domain/InventoryItemRepository.js";
-import { Quantity } from "../../domain/Quantity.js";
-import { SKU } from "../../domain/Sku.js";
+import type { InventoryItemRepository } from "../../domain/inventory-item/InventoryItemRepository.js";
+import { Quantity } from "../../domain/inventory-item/Quantity.js";
+import { SKU } from "../../domain/inventory-item/Sku.js";
 
 export interface ReserveStockCommand {
   sku: string;

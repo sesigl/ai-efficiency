@@ -1,10 +1,10 @@
-import type { AvailabilityProvider } from "../../domain/AvailabilityProvider.js";
-import type { CalculatedPrice } from "../../domain/CalculatedPrice.js";
-import { Money } from "../../domain/Money.js";
-import type { PriceEntryRepository } from "../../domain/PriceEntryRepository.js";
-import { PriceEntry } from "../../domain/PriceEntry.js";
-import type { PromotionType } from "../../domain/Promotion.js";
-import { SKU } from "../../domain/Sku.js";
+import type { AvailabilityProvider } from "../../domain/price-entry/AvailabilityProvider.js";
+import type { CalculatedPrice } from "../../domain/price-entry/CalculatedPrice.js";
+import { Money } from "../../domain/price-entry/Money.js";
+import type { PriceEntryRepository } from "../../domain/price-entry/PriceEntryRepository.js";
+import { PriceEntry } from "../../domain/price-entry/PriceEntry.js";
+import type { PromotionType } from "../../domain/price-entry/Promotion.js";
+import { SKU } from "../../domain/price-entry/Sku.js";
 
 export interface SetBasePriceCommand {
   sku: string;

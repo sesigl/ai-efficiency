@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { PricingUseCases } from "../modules/pricing/infrastructure/di.js";
-import type { PromotionType } from "../modules/pricing/domain/Promotion.js";
+import type { PromotionType } from "../modules/pricing/domain/price-entry/Promotion.js";
 
 export function registerPricingRoutes(fastify: FastifyInstance, useCases: PricingUseCases): void {
   fastify.post<{

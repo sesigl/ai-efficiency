@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { InventoryItem } from "../../../../src/modules/warehouse/domain/InventoryItem.js";
-import { SKU } from "../../../../src/modules/warehouse/domain/Sku.js";
-import { Quantity } from "../../../../src/modules/warehouse/domain/Quantity.js";
+import { InventoryItem } from "../../../../src/modules/warehouse/domain/inventory-item/InventoryItem.js";
+import { SKU } from "../../../../src/modules/warehouse/domain/inventory-item/Sku.js";
+import { Quantity } from "../../../../src/modules/warehouse/domain/inventory-item/Quantity.js";
 import { futureDate } from "../../../fixtures/WarehouseFixtures.js";
 
 describe("InventoryItem", () => {

@@ -1,7 +1,7 @@
 import { InventoryUseCases } from "../application/inventory/InventoryUseCases.js";
 import { ReservationUseCases } from "../application/reservations/ReservationUseCases.js";
-import type { InventoryItemRepository } from "../domain/InventoryItemRepository.js";
-import { InMemoryInventoryItemRepository } from "./InMemoryInventoryItemRepository.js";
+import type { InventoryItemRepository } from "../domain/inventory-item/InventoryItemRepository.js";
+import { InMemoryInventoryItemRepository } from "./persistence/in-memory/InMemoryInventoryItemRepository.js";
 
 export interface WarehouseUseCases {
   repository: InventoryItemRepository;

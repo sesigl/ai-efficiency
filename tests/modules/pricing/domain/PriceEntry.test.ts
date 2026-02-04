@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { PriceEntry } from "../../../../src/modules/pricing/domain/PriceEntry.js";
-import { SKU } from "../../../../src/modules/pricing/domain/Sku.js";
-import { Money } from "../../../../src/modules/pricing/domain/Money.js";
-import { Promotion } from "../../../../src/modules/pricing/domain/Promotion.js";
+import { PriceEntry } from "../../../../src/modules/pricing/domain/price-entry/PriceEntry.js";
+import { SKU } from "../../../../src/modules/pricing/domain/price-entry/Sku.js";
+import { Money } from "../../../../src/modules/pricing/domain/price-entry/Money.js";
+import { Promotion } from "../../../../src/modules/pricing/domain/price-entry/Promotion.js";
 import { createAvailabilitySignal } from "../../../../src/shared/contract/warehouse/AvailabilitySignal.js";
 import { promotionDates } from "../../../fixtures/PricingFixtures.js";
 
