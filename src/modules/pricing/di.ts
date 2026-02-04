@@ -1,11 +1,10 @@
-import type { PriceRepository, AvailabilityProvider } from "./domain/index.js";
-import {
-  SetBasePrice,
-  AddPromotion,
-  RemovePromotion,
-  CalculatePrice,
-  GetPriceEntry,
-} from "./application/index.js";
+import type { PriceRepository } from "./domain/PriceRepository.js";
+import type { AvailabilityProvider } from "./domain/AvailabilityProvider.js";
+import { SetBasePrice } from "./application/SetBasePrice.js";
+import { AddPromotion } from "./application/AddPromotion.js";
+import { RemovePromotion } from "./application/RemovePromotion.js";
+import { CalculatePrice } from "./application/CalculatePrice.js";
+import { GetPriceEntry } from "./application/GetPriceEntry.js";
 import { createPricingInfrastructure } from "./infrastructure/di.js";
 import type { AvailabilityFetcher } from "./infrastructure/WarehouseAvailabilityAdapter.js";
 

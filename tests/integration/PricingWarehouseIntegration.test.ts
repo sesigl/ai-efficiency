@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createWarehouseContainer } from "../../src/modules/warehouse/index.js";
-import { createPricingContainer } from "../../src/modules/pricing/index.js";
+import { createWarehouseContainer } from "../../src/modules/warehouse/di.js";
+import { createPricingContainer } from "../../src/modules/pricing/di.js";
 import { promotionDates } from "../fixtures/PricingFixtures.js";
 
 describe("Pricing and Warehouse Integration", () => {

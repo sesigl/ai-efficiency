@@ -1,5 +1,5 @@
-import type { AvailabilityProvider } from "../domain/index.js";
-import type { AvailabilitySignal } from "../../../shared/contract/warehouse/index.js";
+import type { AvailabilityProvider } from "../domain/AvailabilityProvider.js";
+import type { AvailabilitySignal } from "../../../shared/contract/warehouse/AvailabilitySignal.js";
 
 export type AvailabilityFetcher = (sku: string) => AvailabilitySignal;
 

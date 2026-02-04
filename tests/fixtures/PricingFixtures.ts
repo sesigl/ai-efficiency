@@ -1,14 +1,11 @@
-import {
-  createPricingContainer,
-  type PricingContainer,
-  type PromotionType,
-} from "../../src/modules/pricing/index.js";
+import { createPricingContainer, type PricingContainer } from "../../src/modules/pricing/di.js";
+import type { PromotionType } from "../../src/modules/pricing/domain/Promotion.js";
 import { InMemoryPriceRepository } from "../../src/modules/pricing/infrastructure/InMemoryPriceRepository.js";
 import {
   type AvailabilitySignal,
   createAvailabilitySignal,
   type AvailabilityLevel,
-} from "../../src/shared/contract/warehouse/index.js";
+} from "../../src/shared/contract/warehouse/AvailabilitySignal.js";
 
 export class FakeAvailabilityFetcher {
   private availabilities: Map<string, AvailabilitySignal> = new Map();

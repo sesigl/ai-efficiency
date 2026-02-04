@@ -1,4 +1,6 @@
-import { type InventoryRepository, SKU, Quantity } from "../domain/index.js";
+import type { InventoryRepository } from "../domain/InventoryRepository.js";
+import { SKU } from "../domain/SKU.js";
+import { Quantity } from "../domain/Quantity.js";
 
 export interface RemoveStockCommand {
   sku: string;

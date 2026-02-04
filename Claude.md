@@ -103,7 +103,22 @@ If any check fails, the feature is not complete. Fix all issues before committin
 * `npm run format` - Auto-fix formatting issues
 * `npm run lint` - Check for lint issues (use `npx biome lint --write` to auto-fix)
 
-## 9. Bounded Context Overview
+## 9. TypeScript Best Practices
+
+### Imports & Exports
+* **No export-only index.ts files:** Never create an `index.ts` that only exists to re-export modules. Always import classes, interfaces, and functions directly from their source files.
+  * Bad: `import { SKU, Money } from "../domain/index.js"`
+  * Good: `import { SKU } from "../domain/SKU.js"` and `import { Money } from "../domain/Money.js"`
+* **Rationale:** Direct imports are explicit, improve IDE navigation, and prevent circular dependency issues.
+
+### Type Definitions
+* **Prefer `interface` over `type` for objects:** When defining object shapes, use `interface` rather than `type`.
+  * Use `interface` for: object shapes, classes, function signatures that define contracts
+  * Use `type` for: union types, intersection types, utility types, primitives, tuples
+* **Use `import type`:** When importing only types, use `import type` to enable tree-shaking and make intent clear.
+  * Example: `import type { PriceRepository } from "../domain/PriceRepository.js"`
+
+## 10. Bounded Context Overview
 
 ### Pricing Context
 - **Responsibility:** Calculate prices for products, apply promotions and discounts

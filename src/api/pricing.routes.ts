@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import type { PricingContainer, PromotionType } from "../modules/pricing/index.js";
+import type { PricingContainer } from "../modules/pricing/di.js";
+import type { PromotionType } from "../modules/pricing/domain/Promotion.js";
 
 export function registerPricingRoutes(fastify: FastifyInstance, container: PricingContainer): void {
   fastify.post<{

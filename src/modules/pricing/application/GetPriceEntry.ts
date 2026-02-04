@@ -1,4 +1,6 @@
-import { type PriceRepository, SKU, type PromotionType } from "../domain/index.js";
+import type { PriceRepository } from "../domain/PriceRepository.js";
+import { SKU } from "../domain/SKU.js";
+import type { PromotionType } from "../domain/Promotion.js";
 
 export class GetPriceEntryQuery {
   constructor(public readonly sku: string) {}

@@ -1,9 +1,7 @@
-import {
-  type PriceRepository,
-  SKU,
-  type AvailabilityProvider,
-  type CalculatedPrice,
-} from "../domain/index.js";
+import type { PriceRepository } from "../domain/PriceRepository.js";
+import { SKU } from "../domain/SKU.js";
+import type { AvailabilityProvider } from "../domain/AvailabilityProvider.js";
+import type { CalculatedPrice } from "../domain/CalculatedPrice.js";
 
 export class CalculatePriceQuery {
   constructor(

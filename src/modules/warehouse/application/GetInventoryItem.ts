@@ -1,4 +1,5 @@
-import { type InventoryRepository, SKU } from "../domain/index.js";
+import type { InventoryRepository } from "../domain/InventoryRepository.js";
+import { SKU } from "../domain/SKU.js";
 
 export interface GetInventoryItemQuery {
   sku: string;

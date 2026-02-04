@@ -1,4 +1,6 @@
-import type { PriceRepository, PriceEntry, SKU } from "../domain/index.js";
+import type { PriceRepository } from "../domain/PriceRepository.js";
+import type { PriceEntry } from "../domain/PriceEntry.js";
+import type { SKU } from "../domain/SKU.js";
 
 export class InMemoryPriceRepository implements PriceRepository {
   private entries: Map<string, PriceEntry> = new Map();

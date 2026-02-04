@@ -1,4 +1,4 @@
-import type { InventoryRepository } from "../domain/index.js";
+import type { InventoryRepository } from "../domain/InventoryRepository.js";
 import { InMemoryInventoryRepository } from "./InMemoryInventoryRepository.js";
 
 export interface WarehouseInfrastructure {

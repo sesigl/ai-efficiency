@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import type { WarehouseContainer } from "../modules/warehouse/index.js";
+import type { WarehouseContainer } from "../modules/warehouse/di.js";
 
 export function registerWarehouseRoutes(
   fastify: FastifyInstance,

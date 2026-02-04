@@ -1,12 +1,10 @@
-import type { InventoryRepository } from "./domain/index.js";
-import {
-  AddStock,
-  RemoveStock,
-  ReserveStock,
-  ReleaseReservation,
-  GetAvailability,
-  GetInventoryItem,
-} from "./application/index.js";
+import type { InventoryRepository } from "./domain/InventoryRepository.js";
+import { AddStock } from "./application/AddStock.js";
+import { RemoveStock } from "./application/RemoveStock.js";
+import { ReserveStock } from "./application/ReserveStock.js";
+import { ReleaseReservation } from "./application/ReleaseReservation.js";
+import { GetAvailability } from "./application/GetAvailability.js";
+import { GetInventoryItem } from "./application/GetInventoryItem.js";
 import { createWarehouseInfrastructure } from "./infrastructure/di.js";
 
 export interface WarehouseContainer {

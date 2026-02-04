@@ -1,8 +1,9 @@
-import { type InventoryRepository, SKU } from "../domain/index.js";
+import type { InventoryRepository } from "../domain/InventoryRepository.js";
+import { SKU } from "../domain/SKU.js";
 import {
   type AvailabilitySignal,
   createAvailabilitySignal,
-} from "../../../shared/contract/warehouse/index.js";
+} from "../../../shared/contract/warehouse/AvailabilitySignal.js";
 
 export interface GetAvailabilityQuery {
   sku: string;

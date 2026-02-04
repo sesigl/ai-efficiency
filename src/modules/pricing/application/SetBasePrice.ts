@@ -1,4 +1,7 @@
-import { type PriceRepository, SKU, Money, PriceEntry } from "../domain/index.js";
+import type { PriceRepository } from "../domain/PriceRepository.js";
+import { SKU } from "../domain/SKU.js";
+import { Money } from "../domain/Money.js";
+import { PriceEntry } from "../domain/PriceEntry.js";
 
 export class SetBasePriceCommand {
   constructor(

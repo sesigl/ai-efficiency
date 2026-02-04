@@ -1,6 +1,6 @@
 import Fastify from "fastify";
-import { createWarehouseContainer } from "./modules/warehouse/index.js";
-import { createPricingContainer } from "./modules/pricing/index.js";
+import { createWarehouseContainer } from "./modules/warehouse/di.js";
+import { createPricingContainer } from "./modules/pricing/di.js";
 import { registerWarehouseRoutes } from "./api/warehouse.routes.js";
 import { registerPricingRoutes } from "./api/pricing.routes.js";
 

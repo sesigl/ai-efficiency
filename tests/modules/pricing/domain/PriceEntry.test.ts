@@ -3,7 +3,7 @@ import { PriceEntry } from "../../../../src/modules/pricing/domain/PriceEntry.js
 import { SKU } from "../../../../src/modules/pricing/domain/SKU.js";
 import { Money } from "../../../../src/modules/pricing/domain/Money.js";
 import { Promotion } from "../../../../src/modules/pricing/domain/Promotion.js";
-import { createAvailabilitySignal } from "../../../../src/shared/contract/warehouse/index.js";
+import { createAvailabilitySignal } from "../../../../src/shared/contract/warehouse/AvailabilitySignal.js";
 import { promotionDates } from "../../../fixtures/PricingFixtures.js";
 
 describe("PriceEntry", () => {

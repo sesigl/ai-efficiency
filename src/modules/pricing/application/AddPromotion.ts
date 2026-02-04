@@ -1,4 +1,6 @@
-import { type PriceRepository, SKU, Promotion, type PromotionType } from "../domain/index.js";
+import type { PriceRepository } from "../domain/PriceRepository.js";
+import { SKU } from "../domain/SKU.js";
+import { Promotion, type PromotionType } from "../domain/Promotion.js";
 
 export class AddPromotionCommand {
   constructor(

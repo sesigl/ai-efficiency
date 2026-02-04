@@ -2,7 +2,7 @@ import type { SKU } from "./SKU.js";
 import type { Money } from "./Money.js";
 import type { Promotion } from "./Promotion.js";
 import { CalculatedPrice, AppliedDiscount } from "./CalculatedPrice.js";
-import type { AvailabilitySignal } from "../../../shared/contract/warehouse/index.js";
+import type { AvailabilitySignal } from "../../../shared/contract/warehouse/AvailabilitySignal.js";
 
 const LOW_STOCK_DISCOUNT_REDUCTION = 0.5;
 

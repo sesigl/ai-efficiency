@@ -1,4 +1,5 @@
-import type { PriceRepository, AvailabilityProvider } from "../domain/index.js";
+import type { PriceRepository } from "../domain/PriceRepository.js";
+import type { AvailabilityProvider } from "../domain/AvailabilityProvider.js";
 import { InMemoryPriceRepository } from "./InMemoryPriceRepository.js";
 import {
   WarehouseAvailabilityAdapter,
