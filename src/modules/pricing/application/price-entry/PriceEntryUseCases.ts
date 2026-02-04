@@ -1,7 +1,7 @@
 import type { AvailabilityProvider } from "../../domain/AvailabilityProvider.js";
 import type { CalculatedPrice } from "../../domain/CalculatedPrice.js";
 import { Money } from "../../domain/Money.js";
-import type { PriceRepository } from "../../domain/PriceRepository.js";
+import type { PriceEntryRepository } from "../../domain/PriceEntryRepository.js";
 import { PriceEntry } from "../../domain/PriceEntry.js";
 import type { PromotionType } from "../../domain/Promotion.js";
 import { SKU } from "../../domain/SKU.js";
@@ -43,7 +43,7 @@ class PromotionDTO {
 
 export class PriceEntryUseCases {
   constructor(
-    private readonly repository: PriceRepository,
+    private readonly repository: PriceEntryRepository,
     private readonly availabilityProvider: AvailabilityProvider,
   ) {}
 

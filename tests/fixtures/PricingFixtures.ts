@@ -1,6 +1,6 @@
 import { createPricingUseCases, type PricingUseCases } from "../../src/modules/pricing/di.js";
 import type { PromotionType } from "../../src/modules/pricing/domain/Promotion.js";
-import { InMemoryPriceRepository } from "../../src/modules/pricing/infrastructure/InMemoryPriceRepository.js";
+import { InMemoryPriceEntryRepository } from "../../src/modules/pricing/infrastructure/InMemoryPriceEntryRepository.js";
 import type { AvailabilityFetcher } from "../../src/modules/pricing/infrastructure/WarehouseAvailabilityAdapter.js";
 import {
   type AvailabilitySignal,
@@ -33,7 +33,7 @@ export function createTestPricingUseCasesWithFakeAvailability(): {
   fakeAvailability: FakeAvailabilityFetcher;
   clearRepository: () => void;
 } {
-  const repository = new InMemoryPriceRepository();
+  const repository = new InMemoryPriceEntryRepository();
   const fakeAvailability = new FakeAvailabilityFetcher();
 
   const useCases = createPricingUseCases(fakeAvailability, repository);

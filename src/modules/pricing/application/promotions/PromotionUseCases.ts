@@ -1,4 +1,4 @@
-import type { PriceRepository } from "../../domain/PriceRepository.js";
+import type { PriceEntryRepository } from "../../domain/PriceEntryRepository.js";
 import { Promotion, type PromotionType } from "../../domain/Promotion.js";
 import { SKU } from "../../domain/SKU.js";
 
@@ -18,7 +18,7 @@ export interface RemovePromotionCommand {
 }
 
 export class PromotionUseCases {
-  constructor(private readonly repository: PriceRepository) {}
+  constructor(private readonly repository: PriceEntryRepository) {}
 
   addPromotion(command: AddPromotionCommand): void {
     const sku = SKU.create(command.sku);

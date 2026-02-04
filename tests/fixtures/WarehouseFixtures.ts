@@ -1,10 +1,10 @@
 import { createWarehouseUseCases, type WarehouseUseCases } from "../../src/modules/warehouse/di.js";
-import { InMemoryInventoryRepository } from "../../src/modules/warehouse/infrastructure/InMemoryInventoryRepository.js";
+import { InMemoryInventoryItemRepository } from "../../src/modules/warehouse/infrastructure/InMemoryInventoryItemRepository.js";
 
 export function createTestWarehouseUseCases(): WarehouseUseCases & {
   clearRepository: () => void;
 } {
-  const repository = new InMemoryInventoryRepository();
+  const repository = new InMemoryInventoryItemRepository();
   const useCases = createWarehouseUseCases(repository);
   return {
     ...useCases,
