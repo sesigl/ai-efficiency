@@ -1,28 +1,14 @@
 import Fastify from "fastify";
-import { createWarehouseUseCases } from "./modules/warehouse/di.js";
-import { createPricingUseCases } from "./modules/pricing/di.js";
 import { registerWarehouseRoutes } from "./api/warehouse.routes.js";
 import { registerPricingRoutes } from "./api/pricing.routes.js";
-import type { AvailabilityFetcher } from "./modules/pricing/infrastructure/WarehouseAvailabilityAdapter.js";
-import type { InventoryUseCases } from "./modules/warehouse/application/inventory/InventoryUseCases.js";
-
-class WarehouseAvailabilityFetcher implements AvailabilityFetcher {
-  constructor(private readonly inventory: InventoryUseCases) {}
-
-  fetchAvailability(sku: string) {
-    return this.inventory.getAvailability({ sku });
-  }
-}
+import { createAppDependencies } from "./di.js";
 
 export function createApp() {
   const fastify = Fastify({
     logger: true,
   });
 
-  const warehouseUseCases = createWarehouseUseCases();
-  const pricingUseCases = createPricingUseCases(
-    new WarehouseAvailabilityFetcher(warehouseUseCases.inventory),
-  );
+  const { warehouseUseCases, pricingUseCases } = createAppDependencies();
 
   registerWarehouseRoutes(fastify, warehouseUseCases);
   registerPricingRoutes(fastify, pricingUseCases);
