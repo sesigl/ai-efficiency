@@ -1,6 +1,6 @@
-import type { InventoryItemRepository } from "../domain/InventoryItemRepository.js";
-import type { InventoryItem } from "../domain/InventoryItem.js";
-import type { SKU } from "../domain/Sku.js";
+import type { InventoryItemRepository } from "../../../domain/inventory-item/InventoryItemRepository.js";
+import type { InventoryItem } from "../../../domain/inventory-item/InventoryItem.js";
+import type { SKU } from "../../../domain/inventory-item/Sku.js";
 
 export class InMemoryInventoryItemRepository implements InventoryItemRepository {
   private items: Map<string, InventoryItem> = new Map();

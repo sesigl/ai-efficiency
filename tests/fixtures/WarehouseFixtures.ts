@@ -2,7 +2,7 @@ import {
   createWarehouseUseCases,
   type WarehouseUseCases,
 } from "../../src/modules/warehouse/infrastructure/di.js";
-import { InMemoryInventoryItemRepository } from "../../src/modules/warehouse/infrastructure/InMemoryInventoryItemRepository.js";
+import { InMemoryInventoryItemRepository } from "../../src/modules/warehouse/infrastructure/persistence/in-memory/InMemoryInventoryItemRepository.js";
 
 export function createTestWarehouseUseCases(): WarehouseUseCases & {
   clearRepository: () => void;

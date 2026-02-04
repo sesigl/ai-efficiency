@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createWarehouseUseCases } from "../../src/modules/warehouse/infrastructure/di.js";
 import { createPricingUseCases } from "../../src/modules/pricing/infrastructure/di.js";
-import type { AvailabilityProvider } from "../../src/modules/pricing/domain/AvailabilityProvider.js";
+import type { AvailabilityProvider } from "../../src/modules/pricing/domain/price-entry/AvailabilityProvider.js";
 import type { InventoryUseCases } from "../../src/modules/warehouse/application/inventory/InventoryUseCases.js";
 import { promotionDates } from "../fixtures/PricingFixtures.js";
 

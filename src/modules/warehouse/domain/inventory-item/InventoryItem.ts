@@ -5,7 +5,7 @@ import {
   type AvailabilityLevel,
   createAvailabilitySignal,
   type AvailabilitySignal,
-} from "../../../shared/contract/warehouse/AvailabilitySignal.js";
+} from "../../../../shared/contract/warehouse/AvailabilitySignal.js";
 
 const MEDIUM_STOCK_THRESHOLD = 10;
 const LOW_STOCK_THRESHOLD = 5;

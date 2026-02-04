@@ -30,6 +30,12 @@ ls:
     .dir: kebab-case
     .md: PascalCase | kebab-case
 
+  # Scripts directory
+  scripts:
+    .dir: kebab-case
+    .ts: kebab-case
+    .js: kebab-case
+
 ignore:
   - node_modules
   - dist

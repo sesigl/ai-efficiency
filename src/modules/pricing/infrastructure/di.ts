@@ -1,8 +1,8 @@
 import { PriceEntryUseCases } from "../application/price-entry/PriceEntryUseCases.js";
 import { PromotionUseCases } from "../application/promotions/PromotionUseCases.js";
-import type { AvailabilityProvider } from "../domain/AvailabilityProvider.js";
-import type { PriceEntryRepository } from "../domain/PriceEntryRepository.js";
-import { InMemoryPriceEntryRepository } from "./InMemoryPriceEntryRepository.js";
+import type { AvailabilityProvider } from "../domain/price-entry/AvailabilityProvider.js";
+import type { PriceEntryRepository } from "../domain/price-entry/PriceEntryRepository.js";
+import { InMemoryPriceEntryRepository } from "./persistence/in-memory/InMemoryPriceEntryRepository.js";
 
 export interface PricingUseCases {
   repository: PriceEntryRepository;

@@ -10,13 +10,15 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "biome lint src tests",
-    "format": "biome format --write src tests",
-    "format:check": "biome format src tests",
+    "lint": "biome lint src tests scripts",
+    "format": "biome format --write src tests scripts",
+    "format:check": "biome format src tests scripts",
     "dep-check": "depcruise src --config .dependency-cruiser.cjs",
     "knip": "knip",
     "ls-lint": "ls-lint",
-    "verify": "npm run format:check && npm run lint && npm run ls-lint && npm run knip && npm run dep-check && npm run build && npm run test"
+    "check:domain-structure": "tsx scripts/checks/domain-structure.ts",
+    "check:infrastructure-structure": "tsx scripts/checks/infrastructure-structure.ts",
+    "verify": "npm run format:check && npm run lint && npm run ls-lint && npm run knip && npm run dep-check && npm run check:domain-structure && npm run check:infrastructure-structure && npm run build && npm run test"
   },
   "keywords": [
     "ddd",
