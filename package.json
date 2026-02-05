@@ -1,7 +1,7 @@
 {
-  "name": "supermarket-bounded-contexts",
+  "name": "ai-efficiency-benchmark",
   "version": "1.0.0",
-  "description": "Supermarket system demonstrating bounded contexts for AI and human cognitive boundaries",
+  "description": "Measuring agentic AI coding performance with API-level test specifications",
   "type": "module",
   "scripts": {
     "build": "tsc",
@@ -10,21 +10,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "biome lint src tests scripts",
-    "format": "biome format --write src tests scripts",
-    "format:check": "biome format src tests scripts",
-    "dep-check": "depcruise src --config .dependency-cruiser.cjs",
+    "lint": "biome lint --no-errors-on-unmatched src tests",
+    "format": "biome format --write --no-errors-on-unmatched src tests",
+    "format:check": "biome format --no-errors-on-unmatched src tests",
     "knip": "knip",
     "ls-lint": "ls-lint",
-    "check:domain-structure": "tsx scripts/checks/domain-structure.ts",
-    "check:infrastructure-structure": "tsx scripts/checks/infrastructure-structure.ts",
-    "verify": "npm run format:check && npm run lint && npm run ls-lint && npm run knip && npm run dep-check && npm run check:domain-structure && npm run check:infrastructure-structure && npm run build && npm run test"
+    "verify": "npm run format:check && npm run lint && npm run ls-lint && npm run knip && npm run build && npm run test"
   },
   "keywords": [
-    "ddd",
-    "bounded-contexts",
-    "clean-architecture",
-    "typescript"
+    "typescript",
+    "fastify",
+    "ai-benchmark"
   ],
   "author": "",
   "license": "MIT",
@@ -36,7 +32,6 @@
     "@ls-lint/ls-lint": "^2.3.1",
     "@types/node": "^20.10.0",
     "@vitest/coverage-v8": "^1.6.1",
-    "dependency-cruiser": "^16.0.0",
     "knip": "^5.83.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.0",
