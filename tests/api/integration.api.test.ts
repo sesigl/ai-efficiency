@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { createTestApp, futureDate, promotionDates } from "./test-utils.js";
 
-describe("Cross-Context Integration API", () => {
+describe("Unified Integration API", () => {
   let app: FastifyInstance;
 
   beforeEach(async () => {
@@ -25,24 +25,24 @@ describe("Cross-Context Integration API", () => {
     });
   });
 
-  describe("Pricing reacts to Warehouse availability", () => {
-    it("applies full Black Friday discount when warehouse has high stock", async () => {
+  describe("Discounts react to stock availability", () => {
+    it("applies full Black Friday discount when stock is high", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "TV-001", quantity: 100 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "TV-001", priceInCents: 50000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "TV-001",
           name: "Black Friday",
@@ -56,7 +56,7 @@ describe("Cross-Context Integration API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: "/prices/calculate/TV-001",
       });
 
       expect(response.json().basePriceInCents).toBe(50000);
@@ -64,23 +64,23 @@ describe("Cross-Context Integration API", () => {
       expect(response.json().appliedDiscounts[0].reason).toBe("Full discount applied");
     });
 
-    it("reduces Black Friday discount when warehouse stock is low", async () => {
+    it("reduces Black Friday discount when stock is low", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "TV-001", quantity: 3 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "TV-001", priceInCents: 50000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "TV-001",
           name: "Black Friday",
@@ -94,7 +94,7 @@ describe("Cross-Context Integration API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: "/prices/calculate/TV-001",
       });
 
       expect(response.json().finalPriceInCents).toBe(40000);
@@ -106,14 +106,14 @@ describe("Cross-Context Integration API", () => {
     it("skips discount when product is out of stock", async () => {
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "TV-001", priceInCents: 50000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "TV-001",
           name: "Black Friday",
@@ -127,7 +127,7 @@ describe("Cross-Context Integration API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: "/prices/calculate/TV-001",
       });
 
       expect(response.json().finalPriceInCents).toBe(50000);
@@ -137,20 +137,20 @@ describe("Cross-Context Integration API", () => {
     it("adjusts discount dynamically as stock changes", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "TV-001", quantity: 50 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "TV-001", priceInCents: 50000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "TV-001",
           name: "Black Friday",
@@ -164,19 +164,19 @@ describe("Cross-Context Integration API", () => {
 
       const priceWithHighStock = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: "/prices/calculate/TV-001",
       });
       expect(priceWithHighStock.json().finalPriceInCents).toBe(30000);
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/remove",
+        url: "/stock/remove",
         payload: { sku: "TV-001", quantity: 48 },
       });
 
       const priceWithLowStock = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: "/prices/calculate/TV-001",
       });
       expect(priceWithLowStock.json().finalPriceInCents).toBe(40000);
     });
@@ -184,20 +184,20 @@ describe("Cross-Context Integration API", () => {
     it("reservations affect pricing discount calculations", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "TV-001", quantity: 50 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "TV-001", priceInCents: 50000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "TV-001",
           name: "Black Friday",
@@ -210,13 +210,13 @@ describe("Cross-Context Integration API", () => {
 
       const priceBeforeReservation = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: "/prices/calculate/TV-001",
       });
       expect(priceBeforeReservation.json().finalPriceInCents).toBe(30000);
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: "/reservations",
         payload: {
           sku: "TV-001",
           reservationId: "RES-001",
@@ -227,7 +227,7 @@ describe("Cross-Context Integration API", () => {
 
       const priceAfterReservation = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: "/prices/calculate/TV-001",
       });
       expect(priceAfterReservation.json().finalPriceInCents).toBe(40000);
     });
@@ -235,20 +235,20 @@ describe("Cross-Context Integration API", () => {
     it("releasing reservation restores full discount", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "TV-001", quantity: 20 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "TV-001", priceInCents: 10000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "TV-001",
           name: "Black Friday",
@@ -261,7 +261,7 @@ describe("Cross-Context Integration API", () => {
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: "/reservations",
         payload: {
           sku: "TV-001",
           reservationId: "RES-001",
@@ -272,18 +272,18 @@ describe("Cross-Context Integration API", () => {
 
       const priceWithReservation = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: "/prices/calculate/TV-001",
       });
       expect(priceWithReservation.json().appliedDiscounts[0].appliedPercentage).toBe(20);
 
       await app.inject({
         method: "DELETE",
-        url: "/warehouse/reservations/TV-001/RES-001",
+        url: "/reservations/TV-001/RES-001",
       });
 
       const priceAfterRelease = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: "/prices/calculate/TV-001",
       });
       expect(priceAfterRelease.json().appliedDiscounts[0].appliedPercentage).toBe(40);
     });

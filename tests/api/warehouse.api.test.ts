@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { createTestApp, futureDate } from "./test-utils.js";
 
-describe("Warehouse API", () => {
+describe("Inventory API", () => {
   let app: FastifyInstance;
 
   beforeEach(async () => {
@@ -13,11 +13,11 @@ describe("Warehouse API", () => {
     await app.close();
   });
 
-  describe("POST /warehouse/stock/add", () => {
+  describe("POST /stock/add", () => {
     it("creates inventory item when adding stock to new SKU", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 50 },
       });
 
@@ -25,7 +25,7 @@ describe("Warehouse API", () => {
 
       const inventoryResponse = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: "/inventory/APPLE-001",
       });
       expect(inventoryResponse.json().quantity).toBe(50);
     });
@@ -33,19 +33,19 @@ describe("Warehouse API", () => {
     it("increases quantity when adding stock to existing SKU", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 30 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 20 },
       });
 
       const inventoryResponse = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: "/inventory/APPLE-001",
       });
       expect(inventoryResponse.json().quantity).toBe(50);
     });
@@ -53,13 +53,13 @@ describe("Warehouse API", () => {
     it("rejects adding zero quantity", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 10 },
       });
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 0 },
       });
 
@@ -68,17 +68,17 @@ describe("Warehouse API", () => {
     });
   });
 
-  describe("POST /warehouse/stock/remove", () => {
+  describe("POST /stock/remove", () => {
     it("decreases quantity when removing stock", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 50 },
       });
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/remove",
+        url: "/stock/remove",
         payload: { sku: "APPLE-001", quantity: 20 },
       });
 
@@ -86,7 +86,7 @@ describe("Warehouse API", () => {
 
       const inventoryResponse = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: "/inventory/APPLE-001",
       });
       expect(inventoryResponse.json().quantity).toBe(30);
     });
@@ -94,7 +94,7 @@ describe("Warehouse API", () => {
     it("rejects removing from non-existent SKU", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/remove",
+        url: "/stock/remove",
         payload: { sku: "UNKNOWN", quantity: 10 },
       });
 
@@ -105,13 +105,13 @@ describe("Warehouse API", () => {
     it("rejects removing more than available", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 5 },
       });
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/remove",
+        url: "/stock/remove",
         payload: { sku: "APPLE-001", quantity: 10 },
       });
 
@@ -122,13 +122,13 @@ describe("Warehouse API", () => {
     it("prevents removing stock that is reserved", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 10 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: "/reservations",
         payload: {
           sku: "APPLE-001",
           reservationId: "RES-001",
@@ -139,7 +139,7 @@ describe("Warehouse API", () => {
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/remove",
+        url: "/stock/remove",
         payload: { sku: "APPLE-001", quantity: 5 },
       });
 
@@ -148,17 +148,17 @@ describe("Warehouse API", () => {
     });
   });
 
-  describe("POST /warehouse/reservations", () => {
+  describe("POST /reservations", () => {
     it("creates reservation and returns confirmation", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 50 },
       });
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: "/reservations",
         payload: {
           sku: "APPLE-001",
           reservationId: "RES-001",
@@ -175,13 +175,13 @@ describe("Warehouse API", () => {
     it("reduces available quantity when creating reservation", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 50 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: "/reservations",
         payload: {
           sku: "APPLE-001",
           reservationId: "RES-001",
@@ -192,7 +192,7 @@ describe("Warehouse API", () => {
 
       const inventoryResponse = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: "/inventory/APPLE-001",
       });
       expect(inventoryResponse.json().quantity).toBe(50);
       expect(inventoryResponse.json().availableQuantity).toBe(40);
@@ -201,13 +201,13 @@ describe("Warehouse API", () => {
     it("rejects reservation exceeding available quantity", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 5 },
       });
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: "/reservations",
         payload: {
           sku: "APPLE-001",
           reservationId: "RES-001",
@@ -221,17 +221,17 @@ describe("Warehouse API", () => {
     });
   });
 
-  describe("DELETE /warehouse/reservations/:sku/:reservationId", () => {
+  describe("DELETE /reservations/:sku/:reservationId", () => {
     it("restores available quantity after releasing reservation", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 50 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: "/reservations",
         payload: {
           sku: "APPLE-001",
           reservationId: "RES-001",
@@ -242,30 +242,30 @@ describe("Warehouse API", () => {
 
       const response = await app.inject({
         method: "DELETE",
-        url: "/warehouse/reservations/APPLE-001/RES-001",
+        url: "/reservations/APPLE-001/RES-001",
       });
 
       expect(response.statusCode).toBe(204);
 
       const inventoryResponse = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: "/inventory/APPLE-001",
       });
       expect(inventoryResponse.json().availableQuantity).toBe(50);
     });
   });
 
-  describe("GET /warehouse/inventory/:sku", () => {
+  describe("GET /inventory/:sku", () => {
     it("returns inventory item details", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 100 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: "/reservations",
         payload: {
           sku: "APPLE-001",
           reservationId: "RES-001",
@@ -276,7 +276,7 @@ describe("Warehouse API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: "/inventory/APPLE-001",
       });
 
       expect(response.statusCode).toBe(200);
@@ -291,7 +291,7 @@ describe("Warehouse API", () => {
     it("returns 404 for non-existent SKU", async () => {
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/UNKNOWN",
+        url: "/inventory/UNKNOWN",
       });
 
       expect(response.statusCode).toBe(404);
@@ -299,17 +299,17 @@ describe("Warehouse API", () => {
     });
   });
 
-  describe("GET /warehouse/availability/:sku", () => {
+  describe("GET /availability/:sku", () => {
     it("returns HIGH availability for well-stocked item", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 100 },
       });
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/APPLE-001",
+        url: "/availability/APPLE-001",
       });
 
       expect(response.statusCode).toBe(200);
@@ -321,13 +321,13 @@ describe("Warehouse API", () => {
     it("returns LOW availability for low stock", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 3 },
       });
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/APPLE-001",
+        url: "/availability/APPLE-001",
       });
 
       expect(response.json().level).toBe("LOW");
@@ -337,7 +337,7 @@ describe("Warehouse API", () => {
     it("returns OUT_OF_STOCK for unknown SKU", async () => {
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/UNKNOWN",
+        url: "/availability/UNKNOWN",
       });
 
       expect(response.json().level).toBe("OUT_OF_STOCK");
@@ -347,13 +347,13 @@ describe("Warehouse API", () => {
     it("considers reservations when calculating availability level", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 20 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: "/reservations",
         payload: {
           sku: "APPLE-001",
           reservationId: "RES-001",
@@ -364,7 +364,7 @@ describe("Warehouse API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/APPLE-001",
+        url: "/availability/APPLE-001",
       });
 
       expect(response.json().level).toBe("LOW");
@@ -374,13 +374,13 @@ describe("Warehouse API", () => {
     it("returns OUT_OF_STOCK when all stock is reserved", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 10 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: "/reservations",
         payload: {
           sku: "APPLE-001",
           reservationId: "RES-001",
@@ -391,7 +391,7 @@ describe("Warehouse API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/APPLE-001",
+        url: "/availability/APPLE-001",
       });
 
       expect(response.json().level).toBe("OUT_OF_STOCK");
@@ -401,13 +401,13 @@ describe("Warehouse API", () => {
     it("does not expose inventory internals in availability signal", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 100 },
       });
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/APPLE-001",
+        url: "/availability/APPLE-001",
       });
 
       const availability = response.json();

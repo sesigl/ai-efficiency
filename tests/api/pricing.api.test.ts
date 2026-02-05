@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { createTestApp, promotionDates, pastPromotionDates } from "./test-utils.js";
 
-describe("Pricing API", () => {
+describe("Price API", () => {
   let app: FastifyInstance;
 
   beforeEach(async () => {
@@ -13,11 +13,11 @@ describe("Pricing API", () => {
     await app.close();
   });
 
-  describe("POST /pricing/base-price", () => {
+  describe("POST /prices/base", () => {
     it("creates price entry for new SKU", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 999 },
       });
 
@@ -25,7 +25,7 @@ describe("Pricing API", () => {
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: "/prices/entries/APPLE-001",
       });
       expect(entryResponse.json().basePriceInCents).toBe(999);
     });
@@ -33,19 +33,19 @@ describe("Pricing API", () => {
     it("updates base price for existing SKU", async () => {
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 999 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 1299 },
       });
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: "/prices/entries/APPLE-001",
       });
       expect(entryResponse.json().basePriceInCents).toBe(1299);
     });
@@ -53,7 +53,7 @@ describe("Pricing API", () => {
     it("rejects zero base price", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 0 },
       });
 
@@ -64,13 +64,13 @@ describe("Pricing API", () => {
     it("uses USD as default currency", async () => {
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 999 },
       });
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: "/prices/entries/APPLE-001",
       });
       expect(entryResponse.json().currency).toBe("USD");
     });
@@ -78,30 +78,30 @@ describe("Pricing API", () => {
     it("accepts custom currency", async () => {
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 999, currency: "EUR" },
       });
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: "/prices/entries/APPLE-001",
       });
       expect(entryResponse.json().currency).toBe("EUR");
     });
   });
 
-  describe("POST /pricing/promotions", () => {
+  describe("POST /prices/promotions", () => {
     it("adds promotion to existing price entry", async () => {
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 999 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       const response = await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "APPLE-001",
           name: "Black Friday",
@@ -117,7 +117,7 @@ describe("Pricing API", () => {
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: "/prices/entries/APPLE-001",
       });
       expect(entryResponse.json().promotions).toHaveLength(1);
       expect(entryResponse.json().promotions[0].name).toBe("Black Friday");
@@ -127,7 +127,7 @@ describe("Pricing API", () => {
       const { validFrom, validUntil } = promotionDates();
       const response = await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "UNKNOWN",
           name: "Black Friday",
@@ -145,14 +145,14 @@ describe("Pricing API", () => {
     it("rejects duplicate promotion", async () => {
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 999 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "APPLE-001",
           name: "Black Friday",
@@ -165,7 +165,7 @@ describe("Pricing API", () => {
 
       const response = await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "APPLE-001",
           name: "Black Friday",
@@ -181,18 +181,18 @@ describe("Pricing API", () => {
     });
   });
 
-  describe("DELETE /pricing/promotions/:sku/:promotionName", () => {
+  describe("DELETE /prices/promotions/:sku/:promotionName", () => {
     it("removes promotion from price entry", async () => {
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 999 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "APPLE-001",
           name: "Black Friday",
@@ -205,31 +205,31 @@ describe("Pricing API", () => {
 
       const response = await app.inject({
         method: "DELETE",
-        url: "/pricing/promotions/APPLE-001/Black Friday",
+        url: "/prices/promotions/APPLE-001/Black Friday",
       });
 
       expect(response.statusCode).toBe(204);
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: "/prices/entries/APPLE-001",
       });
       expect(entryResponse.json().promotions).toHaveLength(0);
     });
   });
 
-  describe("GET /pricing/entries/:sku", () => {
+  describe("GET /prices/entries/:sku", () => {
     it("returns price entry with promotions", async () => {
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "APPLE-001",
           name: "Black Friday",
@@ -242,7 +242,7 @@ describe("Pricing API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: "/prices/entries/APPLE-001",
       });
 
       expect(response.statusCode).toBe(200);
@@ -257,7 +257,7 @@ describe("Pricing API", () => {
     it("returns 404 for non-existent SKU", async () => {
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/entries/UNKNOWN",
+        url: "/prices/entries/UNKNOWN",
       });
 
       expect(response.statusCode).toBe(404);
@@ -265,23 +265,23 @@ describe("Pricing API", () => {
     });
   });
 
-  describe("GET /pricing/calculate/:sku", () => {
+  describe("GET /prices/calculate/:sku", () => {
     it("returns base price when no promotions exist", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 100 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 1000 },
       });
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/APPLE-001",
+        url: "/prices/calculate/APPLE-001",
       });
 
       expect(response.statusCode).toBe(200);
@@ -293,20 +293,20 @@ describe("Pricing API", () => {
     it("applies full discount when stock is high", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 100 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "APPLE-001",
           name: "Black Friday",
@@ -319,7 +319,7 @@ describe("Pricing API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/APPLE-001",
+        url: "/prices/calculate/APPLE-001",
       });
 
       expect(response.json().finalPriceInCents).toBe(800);
@@ -331,20 +331,20 @@ describe("Pricing API", () => {
     it("reduces discount by 50% when stock is low", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 3 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "APPLE-001",
           name: "Black Friday",
@@ -357,7 +357,7 @@ describe("Pricing API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/APPLE-001",
+        url: "/prices/calculate/APPLE-001",
       });
 
       expect(response.json().finalPriceInCents).toBe(900);
@@ -369,14 +369,14 @@ describe("Pricing API", () => {
     it("applies no discount when out of stock", async () => {
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "APPLE-001",
           name: "Black Friday",
@@ -389,7 +389,7 @@ describe("Pricing API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/APPLE-001",
+        url: "/prices/calculate/APPLE-001",
       });
 
       expect(response.json().finalPriceInCents).toBe(1000);
@@ -400,20 +400,20 @@ describe("Pricing API", () => {
     it("ignores inactive promotions", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 100 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = pastPromotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "APPLE-001",
           name: "Old Sale",
@@ -426,7 +426,7 @@ describe("Pricing API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/APPLE-001",
+        url: "/prices/calculate/APPLE-001",
       });
 
       expect(response.json().finalPriceInCents).toBe(1000);
@@ -436,20 +436,20 @@ describe("Pricing API", () => {
     it("supports date parameter for historical calculation", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
+        url: "/stock/add",
         payload: { sku: "APPLE-001", quantity: 100 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/pricing/base-price",
+        url: "/prices/base",
         payload: { sku: "APPLE-001", priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = pastPromotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: "/prices/promotions",
         payload: {
           sku: "APPLE-001",
           name: "Old Sale",
@@ -465,7 +465,7 @@ describe("Pricing API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: `/pricing/calculate/APPLE-001?at=${pastDate.toISOString()}`,
+        url: `/prices/calculate/APPLE-001?at=${pastDate.toISOString()}`,
       });
 
       expect(response.json().finalPriceInCents).toBe(850);
