@@ -13,28 +13,17 @@ ls:
     .yml: kebab-case
     .yaml: kebab-case
 
-  # Source directory - domain/application/infrastructure files use PascalCase
+  # Source directory
   src:
     .dir: kebab-case
     .ts: PascalCase | kebab-case
     .js: PascalCase | kebab-case
 
-  # Test directory - test files use PascalCase with .test.ts suffix
+  # Test directory
   tests:
     .dir: kebab-case
     .ts: PascalCase | kebab-case
     .js: PascalCase | kebab-case
-
-  # Architecture documentation
-  architecture:
-    .dir: kebab-case
-    .md: PascalCase | kebab-case
-
-  # Scripts directory
-  scripts:
-    .dir: kebab-case
-    .ts: kebab-case
-    .js: kebab-case
 
 ignore:
   - node_modules

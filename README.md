@@ -1,6 +1,6 @@
-# AI Efficiency with Bounded Contexts
+# AI Efficiency Benchmark
 
-A supermarket application demonstrating Domain-Driven Design (DDD) with bounded contexts. This project is designed to measure agentic AI coding performance.
+A project designed to measure agentic AI coding performance. AI coding agents implement features based on a well-defined specification via API-level tests.
 
 ## Purpose
 
@@ -23,81 +23,42 @@ The API tests serve as an executable specification. When an AI agent is tasked w
 - The agent decides **how** to implement it
 - Efficiency metrics capture implementation cost (tokens, time, iterations)
 
-## Branch Structure
+## Design Decisions
 
-### Main Branch
-The `main` branch contains the reference implementation with all API tests passing.
+### No TDD Requirement
 
-### Flavor Branches
-Branches prefixed with `flavor/` contain alternative implementations:
+This project intentionally does not enforce Test-Driven Development (TDD) as a methodology. Tests are provided as an executable specification for measuring implementation efficiency. The agent is free to implement features in whatever order it finds most effective. The focus is on measuring the end result (passing tests, clean code) rather than prescribing a specific development workflow.
 
-- `flavor/minimal` - Minimal implementation approach
-- `flavor/ddd-clean-arch` - Domain-Driven Design with Clean Architecture
-- `flavor/functional` - Functional programming approach
-- etc.
+## Tech Stack
 
-Each flavor branch demonstrates a different architectural approach while satisfying the same API tests.
+- **Runtime:** Node.js with TypeScript
+- **REST Framework:** Fastify
+- **Testing:** Vitest
+- **Code Quality:** Biome (linting & formatting), ls-lint (file naming), knip (unused deps)
 
-### Stats Tracking
-Every branch (main and flavor branches) includes a `stats.md` file documenting:
-
-- Implementation efficiency metrics
-- Token usage for AI-assisted development
-- Time to implement features
-- Number of iterations/attempts
-- Code complexity metrics
-
-## Application Overview
-
-The supermarket system has two bounded contexts:
-
-### Warehouse Context
-- Manages inventory stock levels
-- Handles stock reservations
-- Publishes availability signals (HIGH, LOW, OUT_OF_STOCK)
-
-### Pricing Context
-- Sets base prices for products
-- Manages promotions with validity periods
-- Calculates final prices based on warehouse availability:
-  - **HIGH stock**: Full promotion discount applied
-  - **LOW stock**: 50% of promotion discount applied
-  - **OUT_OF_STOCK**: No discount applied
-
-## Running Tests
+## Getting Started
 
 ```bash
 npm install
+npm run build
 npm test
 ```
 
+## Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run build` | Compile TypeScript |
+| `npm start` | Run the compiled server |
+| `npm run dev` | Run in development mode |
+| `npm test` | Run tests |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:coverage` | Run tests with coverage |
+| `npm run lint` | Lint source files |
+| `npm run format` | Auto-format source files |
+| `npm run verify` | Run all checks (format, lint, build, test) |
+
 ## API Endpoints
-
-### Warehouse API
-- `POST /warehouse/stock/add` - Add stock
-- `POST /warehouse/stock/remove` - Remove stock
-- `POST /warehouse/reservations` - Create reservation
-- `DELETE /warehouse/reservations/:sku/:reservationId` - Release reservation
-- `GET /warehouse/inventory/:sku` - Get inventory details
-- `GET /warehouse/availability/:sku` - Get availability signal
-
-### Pricing API
-- `POST /pricing/base-price` - Set/update base price
-- `POST /pricing/promotions` - Add promotion
-- `DELETE /pricing/promotions/:sku/:promotionName` - Remove promotion
-- `GET /pricing/entries/:sku` - Get price entry
-- `GET /pricing/calculate/:sku` - Calculate final price with discounts
 
 ### Health Check
 - `GET /health` - Service health status
-
-## Test Coverage
-
-The API tests cover:
-- All happy path scenarios
-- Edge cases (zero quantities, non-existent SKUs, duplicate promotions)
-- Cross-context integration (pricing reacts to warehouse availability)
-- Reservation impact on availability and pricing
-- Temporal aspects (promotion validity periods)
-
-Total: 43 API tests ensuring complete behavioral coverage.
