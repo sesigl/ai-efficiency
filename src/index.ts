@@ -7,13 +7,13 @@ const server = fastify({
 
 // Example: Wire up a simple noop endpoint
 // This demonstrates the basic pattern for adding endpoints
-server.get("/health", async (request, reply) => {
+server.get("/health", async (_request, _reply) => {
   // This is a simple noop endpoint that returns a status
   return { status: "ok" };
 });
 
 // Example: Another noop endpoint to demonstrate the pattern
-server.get("/noop", async (request, reply) => {
+server.get("/noop", async (_request, _reply) => {
   // A true noop - does nothing and returns empty response
   return {};
 });
