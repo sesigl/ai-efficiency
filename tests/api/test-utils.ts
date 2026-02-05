@@ -1,10 +1,25 @@
 import { createApp } from "../../src/index.js";
 import type { FastifyInstance } from "fastify";
 
+const itemsBasePath = "/items";
+
 export async function createTestApp(): Promise<FastifyInstance> {
   const { fastify } = createApp();
   await fastify.ready();
   return fastify;
+}
+
+export function itemUrl(sku: string, suffix?: string): string {
+  const baseUrl = `${itemsBasePath}/${sku}`;
+  if (!suffix) {
+    return baseUrl;
+  }
+  const normalizedSuffix = suffix.startsWith("/") ? suffix.slice(1) : suffix;
+  return `${baseUrl}/${normalizedSuffix}`;
+}
+
+export function itemPromotionUrl(sku: string, promotionName: string): string {
+  return itemUrl(sku, `promotions/${encodeURIComponent(promotionName)}`);
 }
 
 export function futureDate(daysFromNow: number = 1): string {
