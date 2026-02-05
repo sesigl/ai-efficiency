@@ -1,35 +1,41 @@
 import fastify from "fastify";
+import { InventoryRepository } from "./warehouse/inventory-repository.js";
+import { PriceRepository } from "./pricing/price-repository.js";
+import { CheckAvailability } from "./warehouse/check-availability.js";
+import { registerWarehouseRoutes } from "./warehouse/routes.js";
+import { registerPricingRoutes } from "./pricing/routes.js";
 
-// Create Fastify server instance
-const server = fastify({
-  logger: true,
-});
+export function createApp() {
+  const server = fastify({
+    logger: false,
+  });
 
-// Example: Wire up a simple noop endpoint
-// This demonstrates the basic pattern for adding endpoints
-server.get("/health", async (_request, _reply) => {
-  // This is a simple noop endpoint that returns a status
-  return { status: "ok" };
-});
+  const inventoryRepository = new InventoryRepository();
+  const priceRepository = new PriceRepository();
+  const checkAvailability = new CheckAvailability(inventoryRepository);
 
-// Example: Another noop endpoint to demonstrate the pattern
-server.get("/noop", async (_request, _reply) => {
-  // A true noop - does nothing and returns empty response
-  return {};
-});
+  server.get("/health", async () => {
+    return { status: "ok" };
+  });
 
-// Start the server
-const start = async () => {
-  try {
-    const port = Number(process.env.PORT) || 3000;
-    const host = process.env.HOST || "0.0.0.0";
+  registerWarehouseRoutes(server, inventoryRepository);
+  registerPricingRoutes(server, priceRepository, checkAvailability);
 
-    await server.listen({ port, host });
-    console.log(`Server is running on http://${host}:${port}`);
-  } catch (err) {
-    server.log.error(err);
+  return { fastify: server };
+}
+
+async function start() {
+  const { fastify: server } = createApp();
+  const port = Number(process.env.PORT) || 3000;
+  const host = process.env.HOST || "0.0.0.0";
+
+  await server.listen({ port, host });
+  console.log(`Server is running on http://${host}:${port}`);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  start().catch((err) => {
+    console.error(err);
     process.exit(1);
-  }
-};
-
-start();
+  });
+}
