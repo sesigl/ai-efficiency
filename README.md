@@ -139,7 +139,26 @@ and architectural dependency rules.
 
 ## Bounded Contexts and Use Cases
 
-[BASE_USE_CASES]
+### Warehouse Context
+
+- **UC-W1: Add stock** — Add quantity to a SKU's inventory. Creates the item if new, increases quantity if existing.
+- **UC-W2: Remove stock** — Decrease a SKU's inventory quantity. Rejects if SKU doesn't exist or quantity is insufficient.
+- **UC-W3: Reserve stock** — Create a reservation that reduces available quantity without changing total stock. Returns confirmation with reservation ID.
+- **UC-W4: Release reservation** — Cancel a reservation, restoring the reserved quantity back to available stock.
+- **UC-W5: Get inventory item** — Retrieve stock details for a SKU: total quantity, available quantity, and active reservations.
+- **UC-W6: Get availability signal** — Return an availability level (HIGH, LOW, OUT_OF_STOCK) based on available quantity thresholds.
+
+### Pricing Context
+
+- **UC-P1: Set base price** — Set or update the base price for a SKU in a given currency.
+- **UC-P2: Add promotion** — Attach a time-bound promotional discount to a SKU with type (BLACK_FRIDAY, CLEARANCE, SEASONAL, BULK_DISCOUNT), percentage, validity period, and priority.
+- **UC-P3: Remove promotion** — Remove a named promotion from a SKU.
+- **UC-P4: Get price entry** — Retrieve base price and all attached promotions for a SKU.
+- **UC-P5: Calculate price** — Compute final price by applying active promotions, dynamically adjusted based on warehouse availability: full discount at HIGH stock, halved at LOW, none at OUT_OF_STOCK.
+
+### Cross-Context Integration
+
+- **UC-I1: Availability-adjusted pricing** — Pricing queries Warehouse's availability signal through a published contract (AvailabilitySignal) to dynamically adjust promotional discounts. Uses the Adapter pattern; contexts never access each other's internals.
 
 ## Integration Rules
 
@@ -206,7 +225,21 @@ code in a clean, logical way by feature area.
 ```
 Add the following use cases to the existing bounded contexts:
 
-[CATEGORY_A_USE_CASES]
+### Warehouse Context (5 use cases)
+
+- **UC-A1: Adjust stock after physical count** — Replace the current stock quantity for a SKU with the actual count from a physical inventory audit. Returns the adjustment delta (difference between old and new quantity). If the SKU doesn't exist, creates it.
+- **UC-A2: Set reorder threshold** — Configure a minimum stock level for a SKU. When available quantity drops to or below this threshold, the item is flagged as "needs reorder."
+- **UC-A3: List items needing reorder** — Return all inventory items where available quantity is at or below the configured reorder threshold.
+- **UC-A4: Record shrinkage** — Remove items from stock with a categorized reason (damaged, expired, theft). Tracked separately from normal stock removal for loss reporting. Rejects if insufficient stock.
+- **UC-A5: Get inventory summary** — Return aggregated inventory overview: total SKUs tracked, total units in stock, count of items needing reorder, and count of out-of-stock items.
+
+### Pricing Context (5 use cases)
+
+- **UC-A6: Schedule future base price** — Set a base price change that takes effect at a specified future date. Before that date, the current price remains active. After that date, calculatePrice uses the scheduled price.
+- **UC-A7: List active promotions** — Return all currently active promotions across all SKUs, optionally filtered by promotion type.
+- **UC-A8: Create tiered bulk discount** — Define quantity-based pricing tiers for a SKU (e.g., 1-9 units: full price, 10-49 units: 5% off, 50+ units: 15% off). When calculating price, a quantity parameter selects the applicable tier.
+- **UC-A9: Clone promotion to multiple SKUs** — Copy an existing promotion's configuration (type, discount percentage, dates, priority) and apply it to a list of target SKUs. Returns count of successful clones and list of skipped SKUs (those without price entries).
+- **UC-A10: Calculate savings summary** — For a given SKU, return a detailed breakdown: base price, each applied discount with name and amount saved, final price, total savings as both absolute amount and percentage.
 
 Refer to Claude.md for all coding standards, folder structure, and dependency
 rules.
@@ -228,8 +261,35 @@ patterns for domain modeling, application services, and infrastructure wiring.
 ```
 Add the following features to the existing application:
 
-[CATEGORY_A_USE_CASES — rephrased as flat feature descriptions without
-bounded context or DDD terminology]
+Stock Management:
+- Adjust stock after physical count: Replace the current stock quantity for a
+  product with the actual count from a physical inventory audit. Returns the
+  adjustment delta. If the product doesn't exist, creates it.
+- Set reorder threshold: Configure a minimum stock level for a product. When
+  available quantity drops to or below this threshold, flag it as "needs reorder."
+- List items needing reorder: Return all inventory items where available quantity
+  is at or below the configured reorder threshold.
+- Record shrinkage: Remove items from stock with a categorized reason (damaged,
+  expired, theft). Track separately from normal stock removal for loss reporting.
+  Reject if insufficient stock.
+- Get inventory summary: Return aggregated overview: total products tracked,
+  total units in stock, count of items needing reorder, and count of out-of-stock
+  items.
+
+Pricing:
+- Schedule future base price: Set a base price change that takes effect at a
+  specified future date. Before that date, the current price remains active.
+- List active promotions: Return all currently active promotions across all
+  products, optionally filtered by promotion type.
+- Create tiered bulk discount: Define quantity-based pricing tiers for a product
+  (e.g., 1-9 units: full price, 10-49 units: 5% off, 50+ units: 15% off). When
+  calculating price, a quantity parameter selects the applicable tier.
+- Clone promotion to multiple products: Copy an existing promotion's
+  configuration and apply it to a list of target products. Returns count of
+  successful clones and list of skipped products (those without price entries).
+- Calculate savings summary: For a given product, return a detailed breakdown:
+  base price, each applied discount with name and amount saved, final price,
+  total savings as both absolute amount and percentage.
 
 Refer to Claude.md for all coding standards and testing practices.
 
@@ -249,7 +309,12 @@ Refer to Claude.md for all coding standards and testing practices.
 ```
 Add the following cross-context integration use case:
 
-[CATEGORY_B_USE_CASE]
+**UC-B1: Generate shelf label data** — Produce a unified data structure for
+shelf labels combining data from both Pricing and Warehouse. Includes: SKU,
+calculated final price, original base price (shown only if discount active),
+savings percentage, and availability badge (In Stock / Low Stock / Out of
+Stock). Queries both contexts and merges their data without either context
+knowing about the other.
 
 This use case requires data from both the Pricing and Warehouse bounded
 contexts. Follow the existing integration pattern:
@@ -273,7 +338,10 @@ Refer to Claude.md for all coding standards and integration patterns.
 ```
 Add the following feature to the existing application:
 
-[CATEGORY_B_USE_CASE — rephrased as a flat feature description]
+Generate shelf label data: Produce a unified data structure for shelf labels
+combining pricing and inventory data. Includes: product SKU, calculated final
+price, original base price (shown only if a discount is active), savings
+percentage, and availability badge (In Stock / Low Stock / Out of Stock).
 
 This feature combines pricing and inventory data into a single response.
 
@@ -294,7 +362,8 @@ Refer to Claude.md for all coding standards and testing practices.
 ```
 Create a new Product Catalog bounded context and implement these use cases:
 
-[CATEGORY_C_USE_CASES]
+- **UC-C1: Register a product** — Add a new product to the catalog with attributes: name, description, category (e.g., "Dairy", "Produce", "Beverages"), brand, unit of measure (kg, piece, liter, pack), and barcode. The SKU is assigned upon registration.
+- **UC-C2: Search products by category** — Query the product catalog to find all products within a given category. Returns a list of matching products with their full catalog details.
 
 This context is fully independent — it must NOT depend on Warehouse or Pricing.
 Follow the same bounded context structure defined in Claude.md:
@@ -322,7 +391,13 @@ rules.
 ```
 Add product catalog functionality to the existing application:
 
-[CATEGORY_C_USE_CASES — rephrased as flat feature descriptions]
+- Register a product: Add a new product to the catalog with attributes: name,
+  description, category (e.g., "Dairy", "Produce", "Beverages"), brand, unit of
+  measure (kg, piece, liter, pack), and barcode. The SKU is assigned upon
+  registration.
+- Search products by category: Query the product catalog to find all products
+  within a given category. Returns a list of matching products with their full
+  catalog details.
 
 Products should be manageable independently from pricing and inventory features.
 
