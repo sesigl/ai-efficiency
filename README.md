@@ -149,14 +149,9 @@ contract. Use the Adapter pattern at the infrastructure layer to bridge contexts
 
 ## Development Process
 
-1. For each use case, write the API-level test FIRST (TDD)
-2. Tests must verify behavior through the application layer's public API only
-3. Do NOT write implementation code until the test for that use case exists and
-   fails
-4. Each use case must have at least one test verifying its core behavior
-5. Only create API-level tests — do not create separate unit tests for domain
-   classes
-6. Run `npm run verify` after completing all use cases to ensure every check
+1. For each use case, there are already the API-level tests
+2. Each test must pass. make one api test pass at a time
+3. Run `npm run verify` after completing all use cases to ensure every check
    passes
 ```
 
@@ -199,14 +194,9 @@ code in a clean, logical way by feature area.
 
 ## Development Process
 
-1. For each feature, write the API-level test FIRST (TDD)
-2. Tests must verify behavior through the public service/API layer only
-3. Do NOT write implementation code until the test exists and fails
-4. Each feature must have at least one test verifying its core behavior
-5. Only create API-level tests — do not create separate unit tests for internal
-   classes
-6. Run `npm run verify` after completing all features to ensure every check
-   passes
+1. For each use case, there are already the API-level tests
+2. Each test must pass. make one api test pass at a time
+3. Run `npm run verify` after completing all use cases to ensure every check
 ```
 
 ### Prompt 2: Add Category A Use Cases
@@ -369,13 +359,7 @@ The API tests serve as an executable specification. When an AI agent is tasked w
 
 - The tests define **what** the system should do
 - The agent decides **how** to implement it
-- Efficiency metrics capture implementation cost (tokens, time, iterations)
-
-## Design Decisions
-
-### No TDD Requirement
-
-This project intentionally does not enforce Test-Driven Development (TDD) as a methodology. Tests are provided as an executable specification for measuring implementation efficiency. The agent is free to implement features in whatever order it finds most effective. The focus is on measuring the end result (passing tests, clean code) rather than prescribing a specific development workflow.
+- Efficiency metrics capture implementation cost (tokens, time, ...) 
 
 ## Tech Stack
 
