@@ -1,33 +1,37 @@
 import fastify from "fastify";
+import { InMemoryInventoryRepository } from "./inventory/inventory-repository.js";
+import { InMemoryPricingRepository } from "./pricing/pricing-repository.js";
+import { registerInventoryRoutes } from "./inventory/inventory-routes.js";
+import { registerPricingRoutes } from "./pricing/pricing-routes.js";
 
-// Create Fastify server instance
-const server = fastify({
-  logger: true,
-});
+export function createApp() {
+  const server = fastify({
+    logger: true,
+  });
 
-// Example: Wire up a simple noop endpoint
-// This demonstrates the basic pattern for adding endpoints
-server.get("/health", async (_request, _reply) => {
-  // This is a simple noop endpoint that returns a status
-  return { status: "ok" };
-});
+  const inventoryRepository = new InMemoryInventoryRepository();
+  const pricingRepository = new InMemoryPricingRepository();
 
-// Example: Another noop endpoint to demonstrate the pattern
-server.get("/noop", async (_request, _reply) => {
-  // A true noop - does nothing and returns empty response
-  return {};
-});
+  server.get("/health", async (_request, _reply) => {
+    return { status: "ok" };
+  });
 
-// Start the server
+  registerInventoryRoutes(server, inventoryRepository);
+  registerPricingRoutes(server, pricingRepository, inventoryRepository);
+
+  return { fastify: server };
+}
+
 const start = async () => {
   try {
+    const { fastify: server } = createApp();
     const port = Number(process.env.PORT) || 3000;
     const host = process.env.HOST || "0.0.0.0";
 
     await server.listen({ port, host });
     console.log(`Server is running on http://${host}:${port}`);
   } catch (err) {
-    server.log.error(err);
+    console.error(err);
     process.exit(1);
   }
 };
