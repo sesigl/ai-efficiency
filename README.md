@@ -17,7 +17,7 @@ A supermarket management system covering inventory tracking, product pricing wit
 
 ## Use Cases
 
-### Base Use Cases (Already Implemented)
+### Base Use Cases (Baseline - that's where an application starts)
 
 These use cases form the foundation of the application and are verified by the existing test suite.
 
