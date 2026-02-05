@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { FastifyInstance } from "fastify";
-import { createTestApp, futureDate, promotionDates, pastPromotionDates } from "./test-utils.js";
+import {
+  createTestApp,
+  futureDate,
+  itemPromotionUrl,
+  itemUrl,
+  pastPromotionDates,
+  promotionDates,
+} from "./test-utils.js";
 
 describe("API", () => {
   let app: FastifyInstance;
@@ -25,48 +32,48 @@ describe("API", () => {
     });
   });
 
-  describe("POST /pricing/base-price", () => {
+  describe("PUT /items/:sku/price", () => {
     it("creates price entry for new SKU", async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 999 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 999 },
       });
 
       expect(response.statusCode).toBe(204);
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: itemUrl("APPLE-001", "price"),
       });
       expect(entryResponse.json().basePriceInCents).toBe(999);
     });
 
     it("updates base price for existing SKU", async () => {
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 999 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 999 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 1299 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1299 },
       });
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: itemUrl("APPLE-001", "price"),
       });
       expect(entryResponse.json().basePriceInCents).toBe(1299);
     });
 
     it("rejects zero base price", async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 0 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 0 },
       });
 
       expect(response.statusCode).toBe(400);
@@ -75,47 +82,46 @@ describe("API", () => {
 
     it("uses USD as default currency", async () => {
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 999 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 999 },
       });
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: itemUrl("APPLE-001", "price"),
       });
       expect(entryResponse.json().currency).toBe("USD");
     });
 
     it("accepts custom currency", async () => {
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 999, currency: "EUR" },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 999, currency: "EUR" },
       });
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: itemUrl("APPLE-001", "price"),
       });
       expect(entryResponse.json().currency).toBe("EUR");
     });
   });
 
-  describe("POST /pricing/promotions", () => {
+  describe("POST /items/:sku/promotions", () => {
     it("adds promotion to existing price entry", async () => {
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 999 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 999 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       const response = await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("APPLE-001", "promotions"),
         payload: {
-          sku: "APPLE-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 30,
@@ -129,7 +135,7 @@ describe("API", () => {
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: itemUrl("APPLE-001", "price"),
       });
       expect(entryResponse.json().promotions).toHaveLength(1);
       expect(entryResponse.json().promotions[0].name).toBe("Black Friday");
@@ -139,9 +145,8 @@ describe("API", () => {
       const { validFrom, validUntil } = promotionDates();
       const response = await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("UNKNOWN", "promotions"),
         payload: {
-          sku: "UNKNOWN",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 30,
@@ -156,17 +161,16 @@ describe("API", () => {
 
     it("rejects duplicate promotion", async () => {
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 999 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 999 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("APPLE-001", "promotions"),
         payload: {
-          sku: "APPLE-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 30,
@@ -177,9 +181,8 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("APPLE-001", "promotions"),
         payload: {
-          sku: "APPLE-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 20,
@@ -193,20 +196,19 @@ describe("API", () => {
     });
   });
 
-  describe("DELETE /pricing/promotions/:sku/:promotionName", () => {
+  describe("DELETE /items/:sku/promotions/:promotionName", () => {
     it("removes promotion from price entry", async () => {
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 999 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 999 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("APPLE-001", "promotions"),
         payload: {
-          sku: "APPLE-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 30,
@@ -217,33 +219,32 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "DELETE",
-        url: "/pricing/promotions/APPLE-001/Black Friday",
+        url: itemPromotionUrl("APPLE-001", "Black Friday"),
       });
 
       expect(response.statusCode).toBe(204);
 
       const entryResponse = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: itemUrl("APPLE-001", "price"),
       });
       expect(entryResponse.json().promotions).toHaveLength(0);
     });
   });
 
-  describe("GET /pricing/entries/:sku", () => {
+  describe("GET /items/:sku/price", () => {
     it("returns price entry with promotions", async () => {
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 1000 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("APPLE-001", "promotions"),
         payload: {
-          sku: "APPLE-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 20,
@@ -254,7 +255,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/entries/APPLE-001",
+        url: itemUrl("APPLE-001", "price"),
       });
 
       expect(response.statusCode).toBe(200);
@@ -269,7 +270,7 @@ describe("API", () => {
     it("returns 404 for non-existent SKU", async () => {
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/entries/UNKNOWN",
+        url: itemUrl("UNKNOWN", "price"),
       });
 
       expect(response.statusCode).toBe(404);
@@ -277,23 +278,23 @@ describe("API", () => {
     });
   });
 
-  describe("GET /pricing/calculate/:sku", () => {
+  describe("GET /items/:sku/price-quote", () => {
     it("returns base price when no promotions exist", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 100 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 1000 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
       });
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/APPLE-001",
+        url: itemUrl("APPLE-001", "price-quote"),
       });
 
       expect(response.statusCode).toBe(200);
@@ -305,22 +306,21 @@ describe("API", () => {
     it("applies full discount when stock is high", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 100 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 1000 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("APPLE-001", "promotions"),
         payload: {
-          sku: "APPLE-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 20,
@@ -331,7 +331,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/APPLE-001",
+        url: itemUrl("APPLE-001", "price-quote"),
       });
 
       expect(response.json().finalPriceInCents).toBe(800);
@@ -343,22 +343,21 @@ describe("API", () => {
     it("reduces discount by 50% when stock is low", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 3 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 3 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 1000 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("APPLE-001", "promotions"),
         payload: {
-          sku: "APPLE-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 20,
@@ -369,7 +368,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/APPLE-001",
+        url: itemUrl("APPLE-001", "price-quote"),
       });
 
       expect(response.json().finalPriceInCents).toBe(900);
@@ -380,17 +379,16 @@ describe("API", () => {
 
     it("applies no discount when out of stock", async () => {
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 1000 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("APPLE-001", "promotions"),
         payload: {
-          sku: "APPLE-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 20,
@@ -401,7 +399,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/APPLE-001",
+        url: itemUrl("APPLE-001", "price-quote"),
       });
 
       expect(response.json().finalPriceInCents).toBe(1000);
@@ -412,22 +410,21 @@ describe("API", () => {
     it("ignores inactive promotions", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 100 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 1000 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = pastPromotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("APPLE-001", "promotions"),
         payload: {
-          sku: "APPLE-001",
           name: "Old Sale",
           type: "SEASONAL",
           discountPercentage: 15,
@@ -438,7 +435,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/APPLE-001",
+        url: itemUrl("APPLE-001", "price-quote"),
       });
 
       expect(response.json().finalPriceInCents).toBe(1000);
@@ -448,22 +445,21 @@ describe("API", () => {
     it("supports date parameter for historical calculation", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 100 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "APPLE-001", priceInCents: 1000 },
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
       });
 
       const { validFrom, validUntil } = pastPromotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("APPLE-001", "promotions"),
         payload: {
-          sku: "APPLE-001",
           name: "Old Sale",
           type: "SEASONAL",
           discountPercentage: 15,
@@ -477,7 +473,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: `/pricing/calculate/APPLE-001?at=${pastDate.toISOString()}`,
+        url: `${itemUrl("APPLE-001", "price-quote")}?at=${pastDate.toISOString()}`,
       });
 
       expect(response.json().finalPriceInCents).toBe(850);
@@ -487,22 +483,21 @@ describe("API", () => {
     it("applies full Black Friday discount when stock is high", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "TV-001", quantity: 100 },
+        url: itemUrl("TV-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "TV-001", priceInCents: 50000 },
+        method: "PUT",
+        url: itemUrl("TV-001", "price"),
+        payload: { priceInCents: 50000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("TV-001", "promotions"),
         payload: {
-          sku: "TV-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 40,
@@ -514,7 +509,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: itemUrl("TV-001", "price-quote"),
       });
 
       expect(response.json().basePriceInCents).toBe(50000);
@@ -525,22 +520,21 @@ describe("API", () => {
     it("reduces Black Friday discount when stock is low", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "TV-001", quantity: 3 },
+        url: itemUrl("TV-001", "stock-adjustments"),
+        payload: { quantityDelta: 3 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "TV-001", priceInCents: 50000 },
+        method: "PUT",
+        url: itemUrl("TV-001", "price"),
+        payload: { priceInCents: 50000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("TV-001", "promotions"),
         payload: {
-          sku: "TV-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 40,
@@ -552,7 +546,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: itemUrl("TV-001", "price-quote"),
       });
 
       expect(response.json().finalPriceInCents).toBe(40000);
@@ -563,17 +557,16 @@ describe("API", () => {
 
     it("skips discount when product is out of stock", async () => {
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "TV-001", priceInCents: 50000 },
+        method: "PUT",
+        url: itemUrl("TV-001", "price"),
+        payload: { priceInCents: 50000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("TV-001", "promotions"),
         payload: {
-          sku: "TV-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 40,
@@ -585,7 +578,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: itemUrl("TV-001", "price-quote"),
       });
 
       expect(response.json().finalPriceInCents).toBe(50000);
@@ -595,22 +588,21 @@ describe("API", () => {
     it("adjusts discount dynamically as stock changes", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "TV-001", quantity: 50 },
+        url: itemUrl("TV-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "TV-001", priceInCents: 50000 },
+        method: "PUT",
+        url: itemUrl("TV-001", "price"),
+        payload: { priceInCents: 50000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("TV-001", "promotions"),
         payload: {
-          sku: "TV-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 40,
@@ -622,19 +614,19 @@ describe("API", () => {
 
       const priceWithHighStock = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: itemUrl("TV-001", "price-quote"),
       });
       expect(priceWithHighStock.json().finalPriceInCents).toBe(30000);
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/remove",
-        payload: { sku: "TV-001", quantity: 48 },
+        url: itemUrl("TV-001", "stock-adjustments"),
+        payload: { quantityDelta: -48 },
       });
 
       const priceWithLowStock = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: itemUrl("TV-001", "price-quote"),
       });
       expect(priceWithLowStock.json().finalPriceInCents).toBe(40000);
     });
@@ -642,22 +634,21 @@ describe("API", () => {
     it("updates discount based on reserved stock", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "TV-001", quantity: 50 },
+        url: itemUrl("TV-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "TV-001", priceInCents: 50000 },
+        method: "PUT",
+        url: itemUrl("TV-001", "price"),
+        payload: { priceInCents: 50000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("TV-001", "promotions"),
         payload: {
-          sku: "TV-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 40,
@@ -668,15 +659,14 @@ describe("API", () => {
 
       const priceBeforeReservation = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: itemUrl("TV-001", "price-quote"),
       });
       expect(priceBeforeReservation.json().finalPriceInCents).toBe(30000);
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: itemUrl("TV-001", "reservations"),
         payload: {
-          sku: "TV-001",
           reservationId: "RES-001",
           quantity: 48,
           expiresAt: futureDate(),
@@ -685,7 +675,7 @@ describe("API", () => {
 
       const priceAfterReservation = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: itemUrl("TV-001", "price-quote"),
       });
       expect(priceAfterReservation.json().finalPriceInCents).toBe(40000);
     });
@@ -693,22 +683,21 @@ describe("API", () => {
     it("restores full discount after releasing reservation", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "TV-001", quantity: 20 },
+        url: itemUrl("TV-001", "stock-adjustments"),
+        payload: { quantityDelta: 20 },
       });
 
       await app.inject({
-        method: "POST",
-        url: "/pricing/base-price",
-        payload: { sku: "TV-001", priceInCents: 10000 },
+        method: "PUT",
+        url: itemUrl("TV-001", "price"),
+        payload: { priceInCents: 10000 },
       });
 
       const { validFrom, validUntil } = promotionDates();
       await app.inject({
         method: "POST",
-        url: "/pricing/promotions",
+        url: itemUrl("TV-001", "promotions"),
         payload: {
-          sku: "TV-001",
           name: "Black Friday",
           type: "BLACK_FRIDAY",
           discountPercentage: 40,
@@ -719,9 +708,8 @@ describe("API", () => {
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: itemUrl("TV-001", "reservations"),
         payload: {
-          sku: "TV-001",
           reservationId: "RES-001",
           quantity: 18,
           expiresAt: futureDate(),
@@ -730,36 +718,36 @@ describe("API", () => {
 
       const priceWithReservation = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: itemUrl("TV-001", "price-quote"),
       });
       expect(priceWithReservation.json().appliedDiscounts[0].appliedPercentage).toBe(20);
 
       await app.inject({
         method: "DELETE",
-        url: "/warehouse/reservations/TV-001/RES-001",
+        url: itemUrl("TV-001", "reservations/RES-001"),
       });
 
       const priceAfterRelease = await app.inject({
         method: "GET",
-        url: "/pricing/calculate/TV-001",
+        url: itemUrl("TV-001", "price-quote"),
       });
       expect(priceAfterRelease.json().appliedDiscounts[0].appliedPercentage).toBe(40);
     });
   });
 
-  describe("POST /warehouse/stock/add", () => {
+  describe("POST /items/:sku/stock-adjustments", () => {
     it("creates inventory item when adding stock to new SKU", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 50 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
       });
 
       expect(response.statusCode).toBe(204);
 
       const inventoryResponse = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: itemUrl("APPLE-001", "stock"),
       });
       expect(inventoryResponse.json().quantity).toBe(50);
     });
@@ -767,19 +755,19 @@ describe("API", () => {
     it("increases quantity when adding stock to existing SKU", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 30 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 30 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 20 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 20 },
       });
 
       const inventoryResponse = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: itemUrl("APPLE-001", "stock"),
       });
       expect(inventoryResponse.json().quantity).toBe(50);
     });
@@ -787,14 +775,14 @@ describe("API", () => {
     it("rejects adding zero quantity", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 10 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 10 },
       });
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 0 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 0 },
       });
 
       expect(response.statusCode).toBe(400);
@@ -802,25 +790,25 @@ describe("API", () => {
     });
   });
 
-  describe("POST /warehouse/stock/remove", () => {
+  describe("POST /items/:sku/stock-adjustments (negative delta)", () => {
     it("decreases quantity when removing stock", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 50 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
       });
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/remove",
-        payload: { sku: "APPLE-001", quantity: 20 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: -20 },
       });
 
       expect(response.statusCode).toBe(204);
 
       const inventoryResponse = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: itemUrl("APPLE-001", "stock"),
       });
       expect(inventoryResponse.json().quantity).toBe(30);
     });
@@ -828,8 +816,8 @@ describe("API", () => {
     it("rejects removing from non-existent SKU", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/remove",
-        payload: { sku: "UNKNOWN", quantity: 10 },
+        url: itemUrl("UNKNOWN", "stock-adjustments"),
+        payload: { quantityDelta: -10 },
       });
 
       expect(response.statusCode).toBe(400);
@@ -839,14 +827,14 @@ describe("API", () => {
     it("rejects removing more than available", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 5 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 5 },
       });
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/remove",
-        payload: { sku: "APPLE-001", quantity: 10 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: -10 },
       });
 
       expect(response.statusCode).toBe(400);
@@ -856,15 +844,14 @@ describe("API", () => {
     it("prevents removing stock that is reserved", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 10 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 10 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: itemUrl("APPLE-001", "reservations"),
         payload: {
-          sku: "APPLE-001",
           reservationId: "RES-001",
           quantity: 8,
           expiresAt: futureDate(),
@@ -873,8 +860,8 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/stock/remove",
-        payload: { sku: "APPLE-001", quantity: 5 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: -5 },
       });
 
       expect(response.statusCode).toBe(400);
@@ -882,19 +869,18 @@ describe("API", () => {
     });
   });
 
-  describe("POST /warehouse/reservations", () => {
+  describe("POST /items/:sku/reservations", () => {
     it("creates reservation and returns confirmation", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 50 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
       });
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: itemUrl("APPLE-001", "reservations"),
         payload: {
-          sku: "APPLE-001",
           reservationId: "RES-001",
           quantity: 10,
           expiresAt: futureDate(),
@@ -909,15 +895,14 @@ describe("API", () => {
     it("reduces available quantity when creating reservation", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 50 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: itemUrl("APPLE-001", "reservations"),
         payload: {
-          sku: "APPLE-001",
           reservationId: "RES-001",
           quantity: 10,
           expiresAt: futureDate(),
@@ -926,7 +911,7 @@ describe("API", () => {
 
       const inventoryResponse = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: itemUrl("APPLE-001", "stock"),
       });
       expect(inventoryResponse.json().quantity).toBe(50);
       expect(inventoryResponse.json().availableQuantity).toBe(40);
@@ -935,15 +920,14 @@ describe("API", () => {
     it("rejects reservation exceeding available quantity", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 5 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 5 },
       });
 
       const response = await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: itemUrl("APPLE-001", "reservations"),
         payload: {
-          sku: "APPLE-001",
           reservationId: "RES-001",
           quantity: 10,
           expiresAt: futureDate(),
@@ -955,19 +939,18 @@ describe("API", () => {
     });
   });
 
-  describe("DELETE /warehouse/reservations/:sku/:reservationId", () => {
+  describe("DELETE /items/:sku/reservations/:reservationId", () => {
     it("restores available quantity after releasing reservation", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 50 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: itemUrl("APPLE-001", "reservations"),
         payload: {
-          sku: "APPLE-001",
           reservationId: "RES-001",
           quantity: 10,
           expiresAt: futureDate(),
@@ -976,32 +959,31 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "DELETE",
-        url: "/warehouse/reservations/APPLE-001/RES-001",
+        url: itemUrl("APPLE-001", "reservations/RES-001"),
       });
 
       expect(response.statusCode).toBe(204);
 
       const inventoryResponse = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: itemUrl("APPLE-001", "stock"),
       });
       expect(inventoryResponse.json().availableQuantity).toBe(50);
     });
   });
 
-  describe("GET /warehouse/inventory/:sku", () => {
+  describe("GET /items/:sku/stock", () => {
     it("returns inventory item details", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 100 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: itemUrl("APPLE-001", "reservations"),
         payload: {
-          sku: "APPLE-001",
           reservationId: "RES-001",
           quantity: 20,
           expiresAt: futureDate(),
@@ -1010,7 +992,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/APPLE-001",
+        url: itemUrl("APPLE-001", "stock"),
       });
 
       expect(response.statusCode).toBe(200);
@@ -1025,7 +1007,7 @@ describe("API", () => {
     it("returns 404 for non-existent SKU", async () => {
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/inventory/UNKNOWN",
+        url: itemUrl("UNKNOWN", "stock"),
       });
 
       expect(response.statusCode).toBe(404);
@@ -1033,17 +1015,17 @@ describe("API", () => {
     });
   });
 
-  describe("GET /warehouse/availability/:sku", () => {
+  describe("GET /items/:sku/availability", () => {
     it("returns HIGH availability for well-stocked item", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 100 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
       });
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/APPLE-001",
+        url: itemUrl("APPLE-001", "availability"),
       });
 
       expect(response.statusCode).toBe(200);
@@ -1055,13 +1037,13 @@ describe("API", () => {
     it("returns LOW availability for low stock", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 3 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 3 },
       });
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/APPLE-001",
+        url: itemUrl("APPLE-001", "availability"),
       });
 
       expect(response.json().level).toBe("LOW");
@@ -1071,7 +1053,7 @@ describe("API", () => {
     it("returns OUT_OF_STOCK for unknown SKU", async () => {
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/UNKNOWN",
+        url: itemUrl("UNKNOWN", "availability"),
       });
 
       expect(response.json().level).toBe("OUT_OF_STOCK");
@@ -1081,15 +1063,14 @@ describe("API", () => {
     it("considers reservations when calculating availability level", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 20 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 20 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: itemUrl("APPLE-001", "reservations"),
         payload: {
-          sku: "APPLE-001",
           reservationId: "RES-001",
           quantity: 18,
           expiresAt: futureDate(),
@@ -1098,7 +1079,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/APPLE-001",
+        url: itemUrl("APPLE-001", "availability"),
       });
 
       expect(response.json().level).toBe("LOW");
@@ -1108,15 +1089,14 @@ describe("API", () => {
     it("returns OUT_OF_STOCK when all stock is reserved", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 10 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 10 },
       });
 
       await app.inject({
         method: "POST",
-        url: "/warehouse/reservations",
+        url: itemUrl("APPLE-001", "reservations"),
         payload: {
-          sku: "APPLE-001",
           reservationId: "RES-001",
           quantity: 10,
           expiresAt: futureDate(),
@@ -1125,7 +1105,7 @@ describe("API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/APPLE-001",
+        url: itemUrl("APPLE-001", "availability"),
       });
 
       expect(response.json().level).toBe("OUT_OF_STOCK");
@@ -1135,13 +1115,13 @@ describe("API", () => {
     it("does not expose inventory internals in availability signal", async () => {
       await app.inject({
         method: "POST",
-        url: "/warehouse/stock/add",
-        payload: { sku: "APPLE-001", quantity: 100 },
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
       });
 
       const response = await app.inject({
         method: "GET",
-        url: "/warehouse/availability/APPLE-001",
+        url: itemUrl("APPLE-001", "availability"),
       });
 
       const availability = response.json();
