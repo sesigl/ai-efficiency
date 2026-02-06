@@ -5,6 +5,8 @@ import type { PriceEntryRepository } from "../../domain/price-entry/PriceEntryRe
 import { PriceEntry } from "../../domain/price-entry/PriceEntry.js";
 import type { PromotionType } from "../../domain/price-entry/Promotion.js";
 import { SKU } from "../../domain/price-entry/Sku.js";
+import { ScheduledPrice } from "../../domain/price-entry/ScheduledPrice.js";
+import { BulkTier } from "../../domain/price-entry/BulkTier.js";
 
 export interface SetBasePriceCommand {
   sku: string;
@@ -12,13 +14,31 @@ export interface SetBasePriceCommand {
   currency?: string;
 }
 
+export interface ScheduleBasePriceCommand {
+  sku: string;
+  priceInCents: number;
+  effectiveDate: Date;
+  currency?: string;
+}
+
+export interface SetBulkTiersCommand {
+  sku: string;
+  tiers: { minQuantity: number; discountPercentage: number }[];
+}
+
 export interface CalculatePriceQuery {
   sku: string;
   at?: Date;
+  quantity?: number;
 }
 
 export interface GetPriceEntryQuery {
   sku: string;
+}
+
+export interface GetSavingsSummaryQuery {
+  sku: string;
+  quantity?: number;
 }
 
 export class PriceEntryDTO {
@@ -39,6 +59,21 @@ class PromotionDTO {
     public readonly validUntil: Date,
     public readonly priority: number,
   ) {}
+}
+
+export interface SavingsSummaryDTO {
+  sku: string;
+  basePriceInCents: number;
+  finalPriceInCents: number;
+  currency: string;
+  totalSavingsInCents: number;
+  totalSavingsPercentage: number;
+  discounts: DiscountDetailDTO[];
+}
+
+export interface DiscountDetailDTO {
+  promotionName: string;
+  amountSavedInCents: number;
 }
 
 export class PriceEntryUseCases {
@@ -62,6 +97,36 @@ export class PriceEntryUseCases {
     this.repository.save(entry);
   }
 
+  scheduleBasePrice(command: ScheduleBasePriceCommand): void {
+    const sku = SKU.create(command.sku);
+    const entry = this.repository.findBySku(sku);
+
+    if (!entry) {
+      throw new Error(`Price entry not found: ${command.sku}`);
+    }
+
+    const price = Money.fromCents(
+      command.priceInCents,
+      command.currency ?? entry.getBasePrice().getCurrency(),
+    );
+    const scheduledPrice = ScheduledPrice.create(price, command.effectiveDate);
+    entry.scheduleBasePrice(scheduledPrice);
+    this.repository.save(entry);
+  }
+
+  setBulkTiers(command: SetBulkTiersCommand): void {
+    const sku = SKU.create(command.sku);
+    const entry = this.repository.findBySku(sku);
+
+    if (!entry) {
+      throw new Error(`Price entry not found: ${command.sku}`);
+    }
+
+    const tiers = command.tiers.map((t) => BulkTier.create(t.minQuantity, t.discountPercentage));
+    entry.setBulkTiers(tiers);
+    this.repository.save(entry);
+  }
+
   calculatePrice(query: CalculatePriceQuery): CalculatedPrice {
     const sku = SKU.create(query.sku);
     const entry = this.repository.findBySku(sku);
@@ -71,7 +136,46 @@ export class PriceEntryUseCases {
     }
 
     const availability = this.availabilityProvider.getAvailability(query.sku);
-    return entry.calculatePrice(availability, query.at ?? new Date());
+    return entry.calculatePrice(availability, query.at ?? new Date(), query.quantity);
+  }
+
+  calculateSavingsSummary(query: GetSavingsSummaryQuery): SavingsSummaryDTO {
+    const sku = SKU.create(query.sku);
+    const entry = this.repository.findBySku(sku);
+
+    if (!entry) {
+      throw new Error(`Price entry not found: ${query.sku}`);
+    }
+
+    const availability = this.availabilityProvider.getAvailability(query.sku);
+    const calculated = entry.calculatePrice(availability, new Date(), query.quantity);
+
+    const baseCents = calculated.basePrice.getCents();
+    const finalCents = calculated.finalPrice.getCents();
+    const totalSavings = baseCents - finalCents;
+    const totalSavingsPercentage = baseCents > 0 ? Math.round((totalSavings / baseCents) * 100) : 0;
+
+    let runningPrice = baseCents;
+    const discounts: DiscountDetailDTO[] = calculated.appliedDiscounts
+      .filter((d) => d.appliedPercentage > 0)
+      .map((d) => {
+        const savedCents = Math.round(runningPrice * (d.appliedPercentage / 100));
+        runningPrice = runningPrice - savedCents;
+        return {
+          promotionName: d.promotionName,
+          amountSavedInCents: savedCents,
+        };
+      });
+
+    return {
+      sku: calculated.sku,
+      basePriceInCents: baseCents,
+      finalPriceInCents: finalCents,
+      currency: calculated.basePrice.getCurrency(),
+      totalSavingsInCents: totalSavings,
+      totalSavingsPercentage,
+      discounts,
+    };
   }
 
   getPriceEntry(query: GetPriceEntryQuery): PriceEntryDTO | undefined {

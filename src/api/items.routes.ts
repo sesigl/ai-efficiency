@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { PricingUseCases } from "../modules/pricing/infrastructure/di.js";
 import type { WarehouseUseCases } from "../modules/warehouse/infrastructure/di.js";
 import type { PromotionType } from "../modules/pricing/domain/price-entry/Promotion.js";
+import type { ShrinkageReason } from "../modules/warehouse/domain/inventory-item/ShrinkageReason.js";
 
 export function registerItemRoutes(
   fastify: FastifyInstance,
@@ -82,13 +83,16 @@ export function registerItemRoutes(
   // Pricing: Calculate price quote
   fastify.get<{
     Params: { sku: string };
-    Querystring: { at?: string };
+    Querystring: { at?: string; quantity?: string };
   }>("/items/:sku/price-quote", async (request, reply) => {
     try {
       const at = request.query.at ? new Date(request.query.at) : new Date();
       const calculatedPrice = pricingUseCases.priceEntries.calculatePrice({
         sku: request.params.sku,
         at,
+        ...(request.query.quantity
+          ? { quantity: Number.parseInt(request.query.quantity, 10) }
+          : {}),
       });
       return reply.send({
         sku: calculatedPrice.sku,
@@ -103,6 +107,84 @@ export function registerItemRoutes(
           reason: d.reason,
         })),
       });
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // UC-A6: Schedule future base price
+  fastify.post<{
+    Params: { sku: string };
+    Body: { priceInCents: number; effectiveDate: string; currency?: string };
+  }>("/items/:sku/scheduled-price", async (request, reply) => {
+    try {
+      pricingUseCases.priceEntries.scheduleBasePrice({
+        sku: request.params.sku,
+        priceInCents: request.body.priceInCents,
+        effectiveDate: new Date(request.body.effectiveDate),
+        ...(request.body.currency ? { currency: request.body.currency } : {}),
+      });
+      return reply.code(204).send();
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // UC-A7: List active promotions
+  fastify.get<{
+    Querystring: { type?: PromotionType };
+  }>("/promotions/active", async (request, reply) => {
+    const result = pricingUseCases.promotions.listActivePromotions({
+      ...(request.query.type ? { type: request.query.type } : {}),
+    });
+    return reply.send(result);
+  });
+
+  // UC-A8: Set bulk tiers
+  fastify.put<{
+    Params: { sku: string };
+    Body: { tiers: { minQuantity: number; discountPercentage: number }[] };
+  }>("/items/:sku/bulk-tiers", async (request, reply) => {
+    try {
+      pricingUseCases.priceEntries.setBulkTiers({
+        sku: request.params.sku,
+        tiers: request.body.tiers,
+      });
+      return reply.code(204).send();
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // UC-A9: Clone promotion
+  fastify.post<{
+    Body: { sourceSku: string; promotionName: string; targetSkus: string[] };
+  }>("/promotions/clone", async (request, reply) => {
+    try {
+      const result = pricingUseCases.promotions.clonePromotion({
+        sourceSku: request.body.sourceSku,
+        promotionName: request.body.promotionName,
+        targetSkus: request.body.targetSkus,
+      });
+      return reply.send(result);
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // UC-A10: Calculate savings summary
+  fastify.get<{
+    Params: { sku: string };
+    Querystring: { quantity?: string };
+  }>("/items/:sku/savings-summary", async (request, reply) => {
+    try {
+      const summary = pricingUseCases.priceEntries.calculateSavingsSummary({
+        sku: request.params.sku,
+        ...(request.query.quantity
+          ? { quantity: Number.parseInt(request.query.quantity, 10) }
+          : {}),
+      });
+      return reply.send(summary);
     } catch (error) {
       return reply.code(400).send({ error: (error as Error).message });
     }
@@ -133,6 +215,67 @@ export function registerItemRoutes(
     } catch (error) {
       return reply.code(400).send({ error: (error as Error).message });
     }
+  });
+
+  // UC-A1: Physical count adjustment
+  fastify.put<{
+    Params: { sku: string };
+    Body: { quantity: number };
+  }>("/items/:sku/physical-count", async (request, reply) => {
+    try {
+      const result = warehouseUseCases.inventory.adjustStockAfterPhysicalCount({
+        sku: request.params.sku,
+        quantity: request.body.quantity,
+      });
+      return reply.send(result);
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // UC-A2: Set reorder threshold
+  fastify.put<{
+    Params: { sku: string };
+    Body: { threshold: number };
+  }>("/items/:sku/reorder-threshold", async (request, reply) => {
+    try {
+      warehouseUseCases.inventory.setReorderThreshold({
+        sku: request.params.sku,
+        threshold: request.body.threshold,
+      });
+      return reply.code(204).send();
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // UC-A3: List items needing reorder
+  fastify.get("/items/reorder-needed", async (_request, reply) => {
+    const items = warehouseUseCases.inventory.listItemsNeedingReorder();
+    return reply.send(items);
+  });
+
+  // UC-A4: Record shrinkage
+  fastify.post<{
+    Params: { sku: string };
+    Body: { quantity: number; reason: ShrinkageReason };
+  }>("/items/:sku/shrinkage", async (request, reply) => {
+    try {
+      warehouseUseCases.inventory.recordShrinkage({
+        sku: request.params.sku,
+        quantity: request.body.quantity,
+        reason: request.body.reason,
+      });
+      return reply.code(204).send();
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // UC-A5: Inventory summary
+  fastify.get("/inventory/summary", async (_request, reply) => {
+    const summary = warehouseUseCases.inventory.getInventorySummary();
+    return reply.send(summary);
   });
 
   // Warehouse: Get stock (inventory item)

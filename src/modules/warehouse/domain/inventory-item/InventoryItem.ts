@@ -1,6 +1,7 @@
 import type { SKU } from "./Sku.js";
 import { Quantity } from "./Quantity.js";
 import { Reservation } from "./Reservation.js";
+import type { ShrinkageReason } from "./ShrinkageReason.js";
 import {
   type AvailabilityLevel,
   createAvailabilitySignal,
@@ -15,10 +16,12 @@ export class InventoryItem {
     private readonly sku: SKU,
     private quantity: Quantity,
     private reservations: Reservation[],
+    private reorderThreshold: Quantity | null,
+    private shrinkageRecords: Map<ShrinkageReason, number>,
   ) {}
 
   static create(sku: SKU, initialQuantity: Quantity = Quantity.zero()): InventoryItem {
-    return new InventoryItem(sku, initialQuantity, []);
+    return new InventoryItem(sku, initialQuantity, [], null, new Map());
   }
 
   getSku(): SKU {
@@ -57,6 +60,42 @@ export class InventoryItem {
       throw new Error("Insufficient available stock");
     }
     this.quantity = this.quantity.subtract(quantity);
+  }
+
+  adjustToCount(newQuantity: Quantity): number {
+    const oldValue = this.quantity.toNumber();
+    this.quantity = newQuantity;
+    return newQuantity.toNumber() - oldValue;
+  }
+
+  setReorderThreshold(threshold: Quantity): void {
+    this.reorderThreshold = threshold;
+  }
+
+  getReorderThreshold(): Quantity | null {
+    return this.reorderThreshold;
+  }
+
+  needsReorder(): boolean {
+    if (!this.reorderThreshold) {
+      return false;
+    }
+    const available = this.getAvailableQuantity();
+    return available.isLessThan(this.reorderThreshold) || available.equals(this.reorderThreshold);
+  }
+
+  recordShrinkage(quantity: Quantity, reason: ShrinkageReason): void {
+    const available = this.getAvailableQuantity();
+    if (quantity.isGreaterThan(available)) {
+      throw new Error("Insufficient available stock for shrinkage");
+    }
+    this.quantity = this.quantity.subtract(quantity);
+    const current = this.shrinkageRecords.get(reason) ?? 0;
+    this.shrinkageRecords.set(reason, current + quantity.toNumber());
+  }
+
+  getShrinkageRecords(): Map<ShrinkageReason, number> {
+    return new Map(this.shrinkageRecords);
   }
 
   reserve(reservationId: string, quantity: Quantity, expiresAt: Date): Reservation {

@@ -1133,4 +1133,987 @@ describe("API", () => {
       expect(availability).not.toHaveProperty("reservations");
     });
   });
+
+  describe("UC-A1: PUT /items/:sku/physical-count", () => {
+    it("replaces stock quantity with actual count for existing SKU", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
+      });
+
+      const response = await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "physical-count"),
+        payload: { quantity: 42 },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json().delta).toBe(-8);
+
+      const stockResponse = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "stock"),
+      });
+      expect(stockResponse.json().quantity).toBe(42);
+    });
+
+    it("creates new SKU when it does not exist", async () => {
+      const response = await app.inject({
+        method: "PUT",
+        url: itemUrl("NEW-SKU-001", "physical-count"),
+        payload: { quantity: 25 },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json().delta).toBe(25);
+
+      const stockResponse = await app.inject({
+        method: "GET",
+        url: itemUrl("NEW-SKU-001", "stock"),
+      });
+      expect(stockResponse.json().quantity).toBe(25);
+    });
+
+    it("returns positive delta when actual count exceeds current stock", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 10 },
+      });
+
+      const response = await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "physical-count"),
+        payload: { quantity: 30 },
+      });
+
+      expect(response.json().delta).toBe(20);
+    });
+
+    it("returns zero delta when count matches current stock", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 15 },
+      });
+
+      const response = await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "physical-count"),
+        payload: { quantity: 15 },
+      });
+
+      expect(response.json().delta).toBe(0);
+    });
+  });
+
+  describe("UC-A2: PUT /items/:sku/reorder-threshold", () => {
+    it("sets reorder threshold for a SKU", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
+      });
+
+      const response = await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "reorder-threshold"),
+        payload: { threshold: 10 },
+      });
+
+      expect(response.statusCode).toBe(204);
+    });
+
+    it("flags item as needing reorder when at threshold", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 10 },
+      });
+
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "reorder-threshold"),
+        payload: { threshold: 10 },
+      });
+
+      const stockResponse = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "stock"),
+      });
+      expect(stockResponse.json().needsReorder).toBe(true);
+    });
+
+    it("does not flag item when above threshold", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
+      });
+
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "reorder-threshold"),
+        payload: { threshold: 10 },
+      });
+
+      const stockResponse = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "stock"),
+      });
+      expect(stockResponse.json().needsReorder).toBe(false);
+    });
+
+    it("creates SKU if it does not exist when setting threshold", async () => {
+      const response = await app.inject({
+        method: "PUT",
+        url: itemUrl("NEW-SKU-002", "reorder-threshold"),
+        payload: { threshold: 5 },
+      });
+
+      expect(response.statusCode).toBe(204);
+
+      const stockResponse = await app.inject({
+        method: "GET",
+        url: itemUrl("NEW-SKU-002", "stock"),
+      });
+      expect(stockResponse.json().needsReorder).toBe(true);
+    });
+  });
+
+  describe("UC-A3: GET /items/reorder-needed", () => {
+    it("returns items at or below reorder threshold", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 5 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "reorder-threshold"),
+        payload: { threshold: 10 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/items/reorder-needed",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toHaveLength(1);
+      expect(response.json()[0].sku).toBe("APPLE-001");
+    });
+
+    it("returns empty list when no items need reorder", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "reorder-threshold"),
+        payload: { threshold: 10 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/items/reorder-needed",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toHaveLength(0);
+    });
+
+    it("excludes items without reorder threshold", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 2 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/items/reorder-needed",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toHaveLength(0);
+    });
+  });
+
+  describe("UC-A4: POST /items/:sku/shrinkage", () => {
+    it("removes items from stock with categorized reason", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "shrinkage"),
+        payload: { quantity: 5, reason: "damaged" },
+      });
+
+      expect(response.statusCode).toBe(204);
+
+      const stockResponse = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "stock"),
+      });
+      expect(stockResponse.json().quantity).toBe(45);
+    });
+
+    it("rejects shrinkage if insufficient stock", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 3 },
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "shrinkage"),
+        payload: { quantity: 10, reason: "theft" },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json().error).toContain("Insufficient");
+    });
+
+    it("tracks shrinkage records separately from normal removal", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "shrinkage"),
+        payload: { quantity: 5, reason: "damaged" },
+      });
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "shrinkage"),
+        payload: { quantity: 3, reason: "expired" },
+      });
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "shrinkage"),
+        payload: { quantity: 2, reason: "theft" },
+      });
+
+      const stockResponse = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "stock"),
+      });
+      expect(stockResponse.json().shrinkage).toEqual({
+        damaged: 5,
+        expired: 3,
+        theft: 2,
+      });
+    });
+
+    it("accepts all valid shrinkage reasons", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+
+      for (const reason of ["damaged", "expired", "theft"]) {
+        const response = await app.inject({
+          method: "POST",
+          url: itemUrl("APPLE-001", "shrinkage"),
+          payload: { quantity: 1, reason },
+        });
+        expect(response.statusCode).toBe(204);
+      }
+    });
+  });
+
+  describe("UC-A5: GET /inventory/summary", () => {
+    it("returns aggregated inventory overview", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
+      });
+      await app.inject({
+        method: "POST",
+        url: itemUrl("BANANA-001", "stock-adjustments"),
+        payload: { quantityDelta: 30 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/inventory/summary",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json().totalSkus).toBe(2);
+      expect(response.json().totalUnits).toBe(80);
+    });
+
+    it("includes count of items needing reorder", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 5 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "reorder-threshold"),
+        payload: { threshold: 10 },
+      });
+      await app.inject({
+        method: "POST",
+        url: itemUrl("BANANA-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/inventory/summary",
+      });
+
+      expect(response.json().itemsNeedingReorder).toBe(1);
+    });
+
+    it("includes count of out-of-stock items", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 50 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("EMPTY-001", "physical-count"),
+        payload: { quantity: 0 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/inventory/summary",
+      });
+
+      expect(response.json().totalSkus).toBe(2);
+      expect(response.json().outOfStockItems).toBe(1);
+    });
+
+    it("returns zeros when no inventory exists", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/inventory/summary",
+      });
+
+      expect(response.json()).toEqual({
+        totalSkus: 0,
+        totalUnits: 0,
+        itemsNeedingReorder: 0,
+        outOfStockItems: 0,
+      });
+    });
+  });
+
+  describe("UC-A6: POST /items/:sku/scheduled-price", () => {
+    it("schedules a future base price change", async () => {
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const effectiveDate = new Date();
+      effectiveDate.setDate(effectiveDate.getDate() + 7);
+
+      const response = await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "scheduled-price"),
+        payload: {
+          priceInCents: 1200,
+          effectiveDate: effectiveDate.toISOString(),
+        },
+      });
+
+      expect(response.statusCode).toBe(204);
+    });
+
+    it("keeps current price before effective date", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const effectiveDate = new Date();
+      effectiveDate.setDate(effectiveDate.getDate() + 7);
+
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "scheduled-price"),
+        payload: {
+          priceInCents: 1200,
+          effectiveDate: effectiveDate.toISOString(),
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "price-quote"),
+      });
+
+      expect(response.json().basePriceInCents).toBe(1000);
+    });
+
+    it("uses scheduled price after effective date", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const pastEffectiveDate = new Date();
+      pastEffectiveDate.setDate(pastEffectiveDate.getDate() - 1);
+
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "scheduled-price"),
+        payload: {
+          priceInCents: 1200,
+          effectiveDate: pastEffectiveDate.toISOString(),
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "price-quote"),
+      });
+
+      expect(response.json().basePriceInCents).toBe(1200);
+    });
+
+    it("rejects scheduling for non-existent price entry", async () => {
+      const effectiveDate = new Date();
+      effectiveDate.setDate(effectiveDate.getDate() + 7);
+
+      const response = await app.inject({
+        method: "POST",
+        url: itemUrl("UNKNOWN", "scheduled-price"),
+        payload: {
+          priceInCents: 1200,
+          effectiveDate: effectiveDate.toISOString(),
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json().error).toContain("Price entry not found");
+    });
+  });
+
+  describe("UC-A7: GET /promotions/active", () => {
+    it("returns all currently active promotions", async () => {
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("BANANA-001", "price"),
+        payload: { priceInCents: 500 },
+      });
+
+      const { validFrom, validUntil } = promotionDates();
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Summer Sale",
+          type: "SEASONAL",
+          discountPercentage: 15,
+          validFrom,
+          validUntil,
+        },
+      });
+      await app.inject({
+        method: "POST",
+        url: itemUrl("BANANA-001", "promotions"),
+        payload: {
+          name: "Black Friday",
+          type: "BLACK_FRIDAY",
+          discountPercentage: 20,
+          validFrom,
+          validUntil,
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/promotions/active",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toHaveLength(2);
+    });
+
+    it("filters by promotion type", async () => {
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const { validFrom, validUntil } = promotionDates();
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Summer Sale",
+          type: "SEASONAL",
+          discountPercentage: 15,
+          validFrom,
+          validUntil,
+        },
+      });
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Black Friday",
+          type: "BLACK_FRIDAY",
+          discountPercentage: 20,
+          validFrom,
+          validUntil,
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/promotions/active?type=SEASONAL",
+      });
+
+      expect(response.json()).toHaveLength(1);
+      expect(response.json()[0].name).toBe("Summer Sale");
+    });
+
+    it("excludes expired promotions", async () => {
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const { validFrom, validUntil } = pastPromotionDates();
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Old Sale",
+          type: "SEASONAL",
+          discountPercentage: 15,
+          validFrom,
+          validUntil,
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/promotions/active",
+      });
+
+      expect(response.json()).toHaveLength(0);
+    });
+  });
+
+  describe("UC-A8: PUT /items/:sku/bulk-tiers", () => {
+    it("defines quantity-based pricing tiers", async () => {
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const response = await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "bulk-tiers"),
+        payload: {
+          tiers: [
+            { minQuantity: 1, discountPercentage: 0 },
+            { minQuantity: 10, discountPercentage: 5 },
+            { minQuantity: 50, discountPercentage: 15 },
+          ],
+        },
+      });
+
+      expect(response.statusCode).toBe(204);
+    });
+
+    it("applies correct tier when calculating price for small quantity", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "bulk-tiers"),
+        payload: {
+          tiers: [
+            { minQuantity: 1, discountPercentage: 0 },
+            { minQuantity: 10, discountPercentage: 5 },
+            { minQuantity: 50, discountPercentage: 15 },
+          ],
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: `${itemUrl("APPLE-001", "price-quote")}?quantity=5`,
+      });
+
+      expect(response.json().finalPriceInCents).toBe(1000);
+    });
+
+    it("applies mid-tier discount for medium quantity", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "bulk-tiers"),
+        payload: {
+          tiers: [
+            { minQuantity: 1, discountPercentage: 0 },
+            { minQuantity: 10, discountPercentage: 5 },
+            { minQuantity: 50, discountPercentage: 15 },
+          ],
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: `${itemUrl("APPLE-001", "price-quote")}?quantity=25`,
+      });
+
+      expect(response.json().finalPriceInCents).toBe(950);
+    });
+
+    it("applies highest tier discount for large quantity", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 200 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "bulk-tiers"),
+        payload: {
+          tiers: [
+            { minQuantity: 1, discountPercentage: 0 },
+            { minQuantity: 10, discountPercentage: 5 },
+            { minQuantity: 50, discountPercentage: 15 },
+          ],
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: `${itemUrl("APPLE-001", "price-quote")}?quantity=100`,
+      });
+
+      expect(response.json().finalPriceInCents).toBe(850);
+    });
+  });
+
+  describe("UC-A9: POST /promotions/clone", () => {
+    it("clones promotion to multiple target SKUs", async () => {
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("BANANA-001", "price"),
+        payload: { priceInCents: 500 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("CHERRY-001", "price"),
+        payload: { priceInCents: 750 },
+      });
+
+      const { validFrom, validUntil } = promotionDates();
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Summer Sale",
+          type: "SEASONAL",
+          discountPercentage: 15,
+          validFrom,
+          validUntil,
+          priority: 5,
+        },
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/promotions/clone",
+        payload: {
+          sourceSku: "APPLE-001",
+          promotionName: "Summer Sale",
+          targetSkus: ["BANANA-001", "CHERRY-001"],
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json().clonedCount).toBe(2);
+      expect(response.json().skippedSkus).toHaveLength(0);
+
+      const bananaPrice = await app.inject({
+        method: "GET",
+        url: itemUrl("BANANA-001", "price"),
+      });
+      expect(bananaPrice.json().promotions).toHaveLength(1);
+      expect(bananaPrice.json().promotions[0].name).toBe("Summer Sale");
+    });
+
+    it("skips SKUs without price entries and reports them", async () => {
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("BANANA-001", "price"),
+        payload: { priceInCents: 500 },
+      });
+
+      const { validFrom, validUntil } = promotionDates();
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Summer Sale",
+          type: "SEASONAL",
+          discountPercentage: 15,
+          validFrom,
+          validUntil,
+        },
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/promotions/clone",
+        payload: {
+          sourceSku: "APPLE-001",
+          promotionName: "Summer Sale",
+          targetSkus: ["BANANA-001", "NONEXISTENT-001"],
+        },
+      });
+
+      expect(response.json().clonedCount).toBe(1);
+      expect(response.json().skippedSkus).toEqual(["NONEXISTENT-001"]);
+    });
+
+    it("rejects when source promotion does not exist", async () => {
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/promotions/clone",
+        payload: {
+          sourceSku: "APPLE-001",
+          promotionName: "Nonexistent",
+          targetSkus: ["BANANA-001"],
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe("UC-A10: GET /items/:sku/savings-summary", () => {
+    it("returns detailed savings breakdown for a SKU", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const { validFrom, validUntil } = promotionDates();
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Summer Sale",
+          type: "SEASONAL",
+          discountPercentage: 10,
+          validFrom,
+          validUntil,
+          priority: 5,
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "savings-summary"),
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json().basePriceInCents).toBe(1000);
+      expect(response.json().finalPriceInCents).toBe(900);
+      expect(response.json().totalSavingsInCents).toBe(100);
+      expect(response.json().totalSavingsPercentage).toBe(10);
+      expect(response.json().discounts).toHaveLength(1);
+      expect(response.json().discounts[0].promotionName).toBe("Summer Sale");
+      expect(response.json().discounts[0].amountSavedInCents).toBe(100);
+    });
+
+    it("shows multiple discounts with individual amounts", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const { validFrom, validUntil } = promotionDates();
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Summer Sale",
+          type: "SEASONAL",
+          discountPercentage: 10,
+          validFrom,
+          validUntil,
+          priority: 10,
+        },
+      });
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Clearance",
+          type: "CLEARANCE",
+          discountPercentage: 5,
+          validFrom,
+          validUntil,
+          priority: 5,
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "savings-summary"),
+      });
+
+      expect(response.json().discounts).toHaveLength(2);
+      expect(response.json().totalSavingsInCents).toBe(
+        response.json().basePriceInCents - response.json().finalPriceInCents,
+      );
+    });
+
+    it("returns zero savings when no promotions are active", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "savings-summary"),
+      });
+
+      expect(response.json().totalSavingsInCents).toBe(0);
+      expect(response.json().totalSavingsPercentage).toBe(0);
+      expect(response.json().discounts).toHaveLength(0);
+    });
+
+    it("includes bulk tier discount in savings when quantity provided", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "bulk-tiers"),
+        payload: {
+          tiers: [
+            { minQuantity: 1, discountPercentage: 0 },
+            { minQuantity: 10, discountPercentage: 5 },
+            { minQuantity: 50, discountPercentage: 15 },
+          ],
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: `${itemUrl("APPLE-001", "savings-summary")}?quantity=50`,
+      });
+
+      expect(response.json().basePriceInCents).toBe(1000);
+      expect(response.json().finalPriceInCents).toBe(850);
+      expect(response.json().totalSavingsInCents).toBe(150);
+    });
+  });
 });
