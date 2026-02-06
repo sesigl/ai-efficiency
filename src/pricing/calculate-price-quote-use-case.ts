@@ -26,14 +26,14 @@ export class CalculatePriceQuoteUseCase {
     private inventoryRepository: InventoryRepository,
   ) {}
 
-  execute(sku: string, atDate?: Date): PriceQuote {
+  execute(sku: string, atDate?: Date, quantity?: number): PriceQuote {
     const priceEntry = this.pricingRepository.findBySku(sku);
 
     if (!priceEntry) {
       throw new Error("Price entry not found");
     }
 
-    const basePriceInCents = priceEntry.getBasePriceInCents();
+    const basePriceInCents = priceEntry.getEffectiveBasePriceInCents(atDate);
     const currency = priceEntry.getCurrency();
 
     const item = this.inventoryRepository.findBySku(sku);
@@ -62,6 +62,11 @@ export class CalculatePriceQuoteUseCase {
       });
 
       totalDiscountPercentage += appliedPercentage;
+    }
+
+    if (quantity !== undefined) {
+      const bulkDiscountPercentage = priceEntry.getBulkDiscountPercentage(quantity);
+      totalDiscountPercentage += bulkDiscountPercentage;
     }
 
     const finalPriceInCents = Math.round(basePriceInCents * (1 - totalDiscountPercentage / 100));
