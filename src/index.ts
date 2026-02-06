@@ -3,6 +3,8 @@ import { InMemoryInventoryRepository } from "./inventory/inventory-repository.js
 import { InMemoryPricingRepository } from "./pricing/pricing-repository.js";
 import { registerInventoryRoutes } from "./inventory/inventory-routes.js";
 import { registerPricingRoutes } from "./pricing/pricing-routes.js";
+import { InMemoryCatalogRepository } from "./catalog/catalog-repository.js";
+import { registerCatalogRoutes } from "./catalog/catalog-routes.js";
 
 export function createApp() {
   const server = fastify({
@@ -11,6 +13,7 @@ export function createApp() {
 
   const inventoryRepository = new InMemoryInventoryRepository();
   const pricingRepository = new InMemoryPricingRepository();
+  const catalogRepository = new InMemoryCatalogRepository();
 
   server.get("/health", async (_request, _reply) => {
     return { status: "ok" };
@@ -18,6 +21,7 @@ export function createApp() {
 
   registerInventoryRoutes(server, inventoryRepository);
   registerPricingRoutes(server, pricingRepository, inventoryRepository);
+  registerCatalogRoutes(server, catalogRepository);
 
   return { fastify: server };
 }

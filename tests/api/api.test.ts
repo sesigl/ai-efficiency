@@ -2146,4 +2146,166 @@ describe("API", () => {
       expect(response.statusCode).toBe(404);
     });
   });
+
+  describe("POST /products", () => {
+    it("registers a new product and assigns a SKU", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/products",
+        payload: {
+          name: "Whole Milk",
+          description: "Fresh whole milk 1L",
+          category: "Dairy",
+          brand: "Farm Fresh",
+          unitOfMeasure: "liter",
+          barcode: "1234567890123",
+        },
+      });
+
+      expect(response.statusCode).toBe(201);
+      const body = response.json();
+      expect(body.sku).toBeDefined();
+      expect(body.name).toBe("Whole Milk");
+      expect(body.description).toBe("Fresh whole milk 1L");
+      expect(body.category).toBe("Dairy");
+      expect(body.brand).toBe("Farm Fresh");
+      expect(body.unitOfMeasure).toBe("liter");
+      expect(body.barcode).toBe("1234567890123");
+    });
+
+    it("assigns unique SKUs to different products", async () => {
+      const response1 = await app.inject({
+        method: "POST",
+        url: "/products",
+        payload: {
+          name: "Whole Milk",
+          description: "Fresh whole milk 1L",
+          category: "Dairy",
+          brand: "Farm Fresh",
+          unitOfMeasure: "liter",
+          barcode: "1234567890123",
+        },
+      });
+
+      const response2 = await app.inject({
+        method: "POST",
+        url: "/products",
+        payload: {
+          name: "Orange Juice",
+          description: "100% pure orange juice",
+          category: "Beverages",
+          brand: "Sunny",
+          unitOfMeasure: "liter",
+          barcode: "9876543210987",
+        },
+      });
+
+      expect(response1.json().sku).not.toBe(response2.json().sku);
+    });
+  });
+
+  describe("GET /products?category=:category", () => {
+    it("returns products matching the given category", async () => {
+      await app.inject({
+        method: "POST",
+        url: "/products",
+        payload: {
+          name: "Whole Milk",
+          description: "Fresh whole milk 1L",
+          category: "Dairy",
+          brand: "Farm Fresh",
+          unitOfMeasure: "liter",
+          barcode: "1234567890123",
+        },
+      });
+      await app.inject({
+        method: "POST",
+        url: "/products",
+        payload: {
+          name: "Cheddar Cheese",
+          description: "Aged cheddar block",
+          category: "Dairy",
+          brand: "Cheese Co",
+          unitOfMeasure: "kg",
+          barcode: "1111111111111",
+        },
+      });
+      await app.inject({
+        method: "POST",
+        url: "/products",
+        payload: {
+          name: "Orange Juice",
+          description: "100% pure OJ",
+          category: "Beverages",
+          brand: "Sunny",
+          unitOfMeasure: "liter",
+          barcode: "2222222222222",
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/products?category=Dairy",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toHaveLength(2);
+      expect(response.json().every((p: { category: string }) => p.category === "Dairy")).toBe(true);
+    });
+
+    it("returns empty list when no products match category", async () => {
+      await app.inject({
+        method: "POST",
+        url: "/products",
+        payload: {
+          name: "Whole Milk",
+          description: "Fresh whole milk 1L",
+          category: "Dairy",
+          brand: "Farm Fresh",
+          unitOfMeasure: "liter",
+          barcode: "1234567890123",
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/products?category=Produce",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual([]);
+    });
+
+    it("returns full catalog details for each product", async () => {
+      await app.inject({
+        method: "POST",
+        url: "/products",
+        payload: {
+          name: "Banana",
+          description: "Organic bananas",
+          category: "Produce",
+          brand: "Tropical",
+          unitOfMeasure: "kg",
+          barcode: "3333333333333",
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/products?category=Produce",
+      });
+
+      expect(response.json()).toHaveLength(1);
+      const product = response.json()[0];
+      expect(product).toMatchObject({
+        name: "Banana",
+        description: "Organic bananas",
+        category: "Produce",
+        brand: "Tropical",
+        unitOfMeasure: "kg",
+        barcode: "3333333333333",
+      });
+      expect(product.sku).toBeDefined();
+    });
+  });
 });
