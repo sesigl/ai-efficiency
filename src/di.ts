@@ -1,3 +1,4 @@
+import { createCatalogUseCases } from "./modules/catalog/infrastructure/di.js";
 import { createPricingUseCases } from "./modules/pricing/infrastructure/di.js";
 import type { AvailabilityProvider } from "./modules/pricing/domain/price-entry/AvailabilityProvider.js";
 import { createWarehouseUseCases } from "./modules/warehouse/infrastructure/di.js";
@@ -67,5 +68,7 @@ export function createAppDependencies() {
     new WarehouseShelfLabelAdapter(warehouseUseCases.inventory),
   );
 
-  return { warehouseUseCases, pricingUseCases, shelfLabel };
+  const catalogUseCases = createCatalogUseCases();
+
+  return { warehouseUseCases, pricingUseCases, shelfLabel, catalogUseCases };
 }

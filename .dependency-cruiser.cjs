@@ -43,6 +43,34 @@ module.exports = {
       from: { path: 'src/modules/warehouse' },
       to: { path: 'src/modules/pricing' },
     },
+    {
+      name: 'catalog-cannot-import-warehouse',
+      comment: 'Catalog context is fully independent and cannot import from Warehouse',
+      severity: 'error',
+      from: { path: 'src/modules/catalog' },
+      to: { path: 'src/modules/warehouse' },
+    },
+    {
+      name: 'catalog-cannot-import-pricing',
+      comment: 'Catalog context is fully independent and cannot import from Pricing',
+      severity: 'error',
+      from: { path: 'src/modules/catalog' },
+      to: { path: 'src/modules/pricing' },
+    },
+    {
+      name: 'warehouse-cannot-import-catalog',
+      comment: 'Warehouse context cannot import from Catalog context',
+      severity: 'error',
+      from: { path: 'src/modules/warehouse' },
+      to: { path: 'src/modules/catalog' },
+    },
+    {
+      name: 'pricing-cannot-import-catalog',
+      comment: 'Pricing context cannot import from Catalog context',
+      severity: 'error',
+      from: { path: 'src/modules/pricing' },
+      to: { path: 'src/modules/catalog' },
+    },
 
     // ===========================================
     // SHARED CONTRACT RULES
