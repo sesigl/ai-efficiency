@@ -5,6 +5,7 @@ import {
 import { InventoryItem } from "../../domain/inventory-item/InventoryItem.js";
 import type { InventoryItemRepository } from "../../domain/inventory-item/InventoryItemRepository.js";
 import { Quantity } from "../../domain/inventory-item/Quantity.js";
+import { validateShrinkageReason } from "../../domain/inventory-item/ShrinkageReason.js";
 import { SKU } from "../../domain/inventory-item/Sku.js";
 
 export interface AddStockCommand {
@@ -15,6 +16,26 @@ export interface AddStockCommand {
 export interface RemoveStockCommand {
   sku: string;
   quantity: number;
+}
+
+export interface AdjustStockAfterCountCommand {
+  sku: string;
+  count: number;
+}
+
+export interface AdjustStockAfterCountResult {
+  delta: number;
+}
+
+export interface SetReorderThresholdCommand {
+  sku: string;
+  threshold: number;
+}
+
+export interface RecordShrinkageCommand {
+  sku: string;
+  quantity: number;
+  reason: string;
 }
 
 export interface GetInventoryItemQuery {
@@ -36,6 +57,19 @@ interface ReservationDTO {
   id: string;
   quantity: number;
   expiresAt: Date;
+}
+
+export interface ReorderItemDTO {
+  sku: string;
+  availableQuantity: number;
+  reorderThreshold: number;
+}
+
+export interface InventorySummaryDTO {
+  totalSkus: number;
+  totalUnits: number;
+  itemsNeedingReorder: number;
+  outOfStockItems: number;
 }
 
 export class InventoryUseCases {
@@ -67,6 +101,74 @@ export class InventoryUseCases {
 
     item.removeStock(quantity);
     this.repository.save(item);
+  }
+
+  adjustStockAfterCount(command: AdjustStockAfterCountCommand): AdjustStockAfterCountResult {
+    const sku = SKU.create(command.sku);
+    const newCount = Quantity.create(command.count);
+
+    let item = this.repository.findBySku(sku);
+
+    if (!item) {
+      item = InventoryItem.create(sku, Quantity.zero());
+    }
+
+    const delta = item.adjustToCount(newCount);
+    this.repository.save(item);
+
+    return { delta };
+  }
+
+  setReorderThreshold(command: SetReorderThresholdCommand): void {
+    const sku = SKU.create(command.sku);
+    const threshold = Quantity.create(command.threshold);
+
+    const item = this.repository.findBySku(sku);
+
+    if (!item) {
+      throw new Error(`Inventory item not found: ${command.sku}`);
+    }
+
+    item.setReorderThreshold(threshold);
+    this.repository.save(item);
+  }
+
+  listItemsNeedingReorder(): ReorderItemDTO[] {
+    const allItems = this.repository.findAll();
+
+    return allItems
+      .filter((item) => item.needsReorder())
+      .map((item) => ({
+        sku: item.getSku().toString(),
+        availableQuantity: item.getAvailableQuantity().toNumber(),
+        reorderThreshold: item.getReorderThreshold()!.toNumber(),
+      }));
+  }
+
+  recordShrinkage(command: RecordShrinkageCommand): void {
+    const sku = SKU.create(command.sku);
+    const quantity = Quantity.create(command.quantity);
+    const reason = validateShrinkageReason(command.reason);
+
+    const item = this.repository.findBySku(sku);
+
+    if (!item) {
+      throw new Error(`Inventory item not found: ${command.sku}`);
+    }
+
+    item.recordShrinkage(quantity, reason);
+    this.repository.save(item);
+  }
+
+  getInventorySummary(): InventorySummaryDTO {
+    const allItems = this.repository.findAll();
+
+    return {
+      totalSkus: allItems.length,
+      totalUnits: allItems.reduce((sum, item) => sum + item.getQuantity().toNumber(), 0),
+      itemsNeedingReorder: allItems.filter((item) => item.needsReorder()).length,
+      outOfStockItems: allItems.filter((item) => item.getQuantity().isZero()).length,
+    };
   }
 
   getInventoryItem(query: GetInventoryItemQuery): InventoryItemDTO | undefined {

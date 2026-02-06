@@ -17,6 +17,13 @@ flowchart LR
     WInfra --> WApp --> WDom
   end
 
+  subgraph Catalog["Product Catalog Bounded Context"]
+    CApp["Application"]
+    CDom["Domain (Product AR, VOs)"]
+    CInfra["Infrastructure"]
+    CInfra --> CApp --> CDom
+  end
+
   PDom -. "consumes" .-> AvailabilitySignal
   WDom -. "publishes" .-> AvailabilitySignal
   PInfra -->|"getAvailability(sku)"| WApp
@@ -26,3 +33,4 @@ flowchart LR
   %% - Published Language: AvailabilitySignal is the contract
   %% - Warehouse does NOT know about Pricing
   %% - Pricing cannot access Warehouse internals
+  %% - Catalog is fully independent: no dependencies on Warehouse or Pricing
