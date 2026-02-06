@@ -222,7 +222,11 @@ code in a clean, logical way by feature area.
 
 #### DDD / Bounded Contexts Flavor
 
+
 ```
+
+It’s 9:05 UTC+7 , I want you to create a stats.md in the root folder that contains log entries, this first log you begin working on a set of use cases. Once you are done with everything you log again an entry. Not to the start that we use opus 4.6.
+Here is your task:"""
 Add the following use cases to the existing bounded contexts:
 
 ### Warehouse Context (5 use cases)
@@ -254,11 +258,15 @@ patterns for domain modeling, application services, and infrastructure wiring.
 3. Do NOT write implementation code until the test exists and fails
 4. Only create API-level tests
 5. Run `npm run verify` after all use cases are complete
+"""
 ```
+
 
 #### Monolith Flavor
 
 ```
+It’s 9:05 UTC+7 , I want you to create a stats.md in the root folder that contains log entries, this first log you begin working on a set of use cases. Once you are done with everything you log again an entry. Not to the start that we use opus 4.6.
+Here is your task:"""
 Add the following features to the existing application:
 
 Stock Management:
@@ -300,13 +308,19 @@ Refer to Claude.md for all coding standards and testing practices.
 3. Do NOT write implementation code until the test exists and fails
 4. Only create API-level tests
 5. Run `npm run verify` after all features are complete
+"""
 ```
+
+
 
 ### Prompt 3: Add Category B Use Case (Cross-Context Integration)
 
 #### DDD / Bounded Contexts Flavor
 
+
 ```
+It’s 9:05 UTC+7 , I want you to create a stats.md in the root folder that contains log entries, this first log you begin working on a set of use cases. Once you are done with everything you log again an entry. Not to the start that we use opus 4.6.
+Here is your task:"""
 Add the following cross-context integration use case:
 
 **UC-B1: Generate shelf label data** — Produce a unified data structure for
@@ -331,11 +345,15 @@ Refer to Claude.md for all coding standards and integration patterns.
 2. Do NOT implement until the test exists and fails
 3. Only create API-level tests
 4. Run `npm run verify` when complete
+"""
 ```
+
 
 #### Monolith Flavor
 
 ```
+It’s 9:05 UTC+7 , I want you to create a stats.md in the root folder that contains log entries, this first log you begin working on a set of use cases. Once you are done with everything you log again an entry. Not to the start that we use opus 4.6.
+Here is your task:"""
 Add the following feature to the existing application:
 
 Generate shelf label data: Produce a unified data structure for shelf labels
@@ -353,13 +371,19 @@ Refer to Claude.md for all coding standards and testing practices.
 2. Do NOT implement until the test exists and fails
 3. Only create API-level tests
 4. Run `npm run verify` when complete
+"""
 ```
+
 
 ### Prompt 4: Add Category C Use Cases (New Bounded Context)
 
 #### DDD / Bounded Contexts Flavor
 
+
 ```
+It’s 9:05 UTC+7 , I want you to create a stats.md in the root folder that contains log entries, this first log you begin working on a set of use cases. Once you are done with everything you log again an entry. Not to the start that we use opus 4.6.
+Here is your task:"""
+
 Create a new Product Catalog bounded context and implement these use cases:
 
 - **UC-C1: Register a product** — Add a new product to the catalog with attributes: name, description, category (e.g., "Dairy", "Produce", "Beverages"), brand, unit of measure (kg, piece, liter, pack), and barcode. The SKU is assigned upon registration.
@@ -384,11 +408,14 @@ rules.
 3. Do NOT write implementation code until the test exists and fails
 4. Only create API-level tests
 5. Run `npm run verify` when complete
+"""
 ```
 
 #### Monolith Flavor
 
 ```
+It’s 9:05 UTC+7 , I want you to create a stats.md in the root folder that contains log entries, this first log you begin working on a set of use cases. Once you are done with everything you log again an entry. Not to the start that we use opus 4.6.
+Here is your task:"""
 Add product catalog functionality to the existing application:
 
 - Register a product: Add a new product to the catalog with attributes: name,
@@ -410,6 +437,7 @@ Refer to Claude.md for all coding standards and testing practices.
 3. Do NOT write implementation code until the test exists and fails
 4. Only create API-level tests
 5. Run `npm run verify` when complete
+"""
 ```
 # AI Efficiency Benchmark
 
