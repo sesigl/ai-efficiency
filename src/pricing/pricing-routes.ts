@@ -10,6 +10,7 @@ import { ListActivePromotionsUseCase } from "./list-active-promotions-use-case.j
 import { CreateBulkDiscountTiersUseCase } from "./create-bulk-discount-tiers-use-case.js";
 import { ClonePromotionUseCase } from "./clone-promotion-use-case.js";
 import { CalculateSavingsSummaryUseCase } from "./calculate-savings-summary-use-case.js";
+import { GenerateShelfLabelUseCase } from "./generate-shelf-label-use-case.js";
 import type { PricingRepository } from "./pricing-repository.js";
 import type { InventoryRepository } from "../inventory/inventory-repository.js";
 
@@ -31,6 +32,10 @@ export function registerPricingRoutes(
   const createBulkDiscountTiersUseCase = new CreateBulkDiscountTiersUseCase(pricingRepository);
   const clonePromotionUseCase = new ClonePromotionUseCase(pricingRepository);
   const calculateSavingsSummaryUseCase = new CalculateSavingsSummaryUseCase(
+    pricingRepository,
+    inventoryRepository,
+  );
+  const generateShelfLabelUseCase = new GenerateShelfLabelUseCase(
     pricingRepository,
     inventoryRepository,
   );
@@ -237,6 +242,23 @@ export function registerPricingRoutes(
       const { sku } = request.params;
 
       const result = calculateSavingsSummaryUseCase.execute(sku);
+
+      return reply.code(200).send(result);
+    } catch (error) {
+      if (error instanceof Error) {
+        return reply.code(404).send({ error: error.message });
+      }
+      throw error;
+    }
+  });
+
+  fastify.get<{
+    Params: { sku: string };
+  }>("/items/:sku/shelf-label", async (request, reply) => {
+    try {
+      const { sku } = request.params;
+
+      const result = generateShelfLabelUseCase.execute(sku);
 
       return reply.code(200).send(result);
     } catch (error) {
