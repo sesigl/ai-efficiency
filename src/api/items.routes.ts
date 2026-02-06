@@ -82,13 +82,15 @@ export function registerItemRoutes(
   // Pricing: Calculate price quote
   fastify.get<{
     Params: { sku: string };
-    Querystring: { at?: string };
+    Querystring: { at?: string; quantity?: string };
   }>("/items/:sku/price-quote", async (request, reply) => {
     try {
       const at = request.query.at ? new Date(request.query.at) : new Date();
+      const quantity = request.query.quantity ? Number.parseInt(request.query.quantity, 10) : 1;
       const calculatedPrice = pricingUseCases.priceEntries.calculatePrice({
         sku: request.params.sku,
         at,
+        quantity,
       });
       return reply.send({
         sku: calculatedPrice.sku,
@@ -103,6 +105,85 @@ export function registerItemRoutes(
           reason: d.reason,
         })),
       });
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // Pricing: Schedule future base price
+  fastify.post<{
+    Params: { sku: string };
+    Body: { priceInCents: number; effectiveDate: string; currency?: string };
+  }>("/items/:sku/scheduled-prices", async (request, reply) => {
+    try {
+      pricingUseCases.priceEntries.scheduleFutureBasePrice({
+        sku: request.params.sku,
+        priceInCents: request.body.priceInCents,
+        effectiveDate: new Date(request.body.effectiveDate),
+        currency: request.body.currency,
+      });
+      return reply.code(204).send();
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // Pricing: List active promotions
+  fastify.get<{
+    Querystring: { type?: PromotionType };
+  }>("/promotions/active", async (request, reply) => {
+    const result = pricingUseCases.promotions.listActivePromotions({
+      type: request.query.type,
+    });
+    return reply.send(result);
+  });
+
+  // Pricing: Create tiered bulk discount
+  fastify.post<{
+    Params: { sku: string };
+    Body: {
+      tiers: Array<{ minQuantity: number; maxQuantity?: number; discountPercentage: number }>;
+    };
+  }>("/items/:sku/bulk-tiers", async (request, reply) => {
+    try {
+      pricingUseCases.priceEntries.createBulkTiers({
+        sku: request.params.sku,
+        tiers: request.body.tiers,
+      });
+      return reply.code(204).send();
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // Pricing: Clone promotion to multiple SKUs
+  fastify.post<{
+    Body: { sourceSku: string; promotionName: string; targetSkus: string[] };
+  }>("/promotions/clone", async (request, reply) => {
+    try {
+      const result = pricingUseCases.promotions.clonePromotion({
+        sourceSku: request.body.sourceSku,
+        promotionName: request.body.promotionName,
+        targetSkus: request.body.targetSkus,
+      });
+      return reply.send(result);
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // Pricing: Calculate savings summary
+  fastify.get<{
+    Params: { sku: string };
+    Querystring: { quantity?: string };
+  }>("/items/:sku/savings-summary", async (request, reply) => {
+    try {
+      const quantity = request.query.quantity ? Number.parseInt(request.query.quantity, 10) : 1;
+      const summary = pricingUseCases.priceEntries.calculateSavingsSummary({
+        sku: request.params.sku,
+        quantity,
+      });
+      return reply.send(summary);
     } catch (error) {
       return reply.code(400).send({ error: (error as Error).message });
     }
@@ -144,6 +225,67 @@ export function registerItemRoutes(
       return reply.code(404).send({ error: "Inventory item not found" });
     }
     return reply.send(item);
+  });
+
+  // Warehouse: Physical count adjustment
+  fastify.put<{
+    Params: { sku: string };
+    Body: { count: number };
+  }>("/items/:sku/physical-count", async (request, reply) => {
+    try {
+      const result = warehouseUseCases.inventory.adjustStockAfterCount({
+        sku: request.params.sku,
+        count: request.body.count,
+      });
+      return reply.send(result);
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // Warehouse: Set reorder threshold
+  fastify.put<{
+    Params: { sku: string };
+    Body: { threshold: number };
+  }>("/items/:sku/reorder-threshold", async (request, reply) => {
+    try {
+      warehouseUseCases.inventory.setReorderThreshold({
+        sku: request.params.sku,
+        threshold: request.body.threshold,
+      });
+      return reply.code(204).send();
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // Warehouse: List items needing reorder
+  fastify.get("/items/needing-reorder", async (_request, reply) => {
+    const items = warehouseUseCases.inventory.listItemsNeedingReorder();
+    return reply.send(items);
+  });
+
+  // Warehouse: Record shrinkage
+  fastify.post<{
+    Params: { sku: string };
+    Body: { quantity: number; reason: string };
+  }>("/items/:sku/shrinkage", async (request, reply) => {
+    try {
+      warehouseUseCases.inventory.recordShrinkage({
+        sku: request.params.sku,
+        quantity: request.body.quantity,
+        reason: request.body.reason,
+      });
+      return reply.code(204).send();
+    } catch (error) {
+      return reply.code(400).send({ error: (error as Error).message });
+    }
+  });
+
+  // Warehouse: Get inventory summary
+  fastify.get("/inventory/summary", async (_request, reply) => {
+    const summary = warehouseUseCases.inventory.getInventorySummary();
+    return reply.send(summary);
   });
 
   // Warehouse: Create reservation

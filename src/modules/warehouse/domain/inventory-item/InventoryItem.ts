@@ -1,6 +1,8 @@
 import type { SKU } from "./Sku.js";
 import { Quantity } from "./Quantity.js";
 import { Reservation } from "./Reservation.js";
+import type { ShrinkageReason } from "./ShrinkageReason.js";
+import { ShrinkageRecord } from "./ShrinkageRecord.js";
 import {
   type AvailabilityLevel,
   createAvailabilitySignal,
@@ -15,10 +17,12 @@ export class InventoryItem {
     private readonly sku: SKU,
     private quantity: Quantity,
     private reservations: Reservation[],
+    private reorderThreshold: Quantity | null,
+    private shrinkageRecords: ShrinkageRecord[],
   ) {}
 
   static create(sku: SKU, initialQuantity: Quantity = Quantity.zero()): InventoryItem {
-    return new InventoryItem(sku, initialQuantity, []);
+    return new InventoryItem(sku, initialQuantity, [], null, []);
   }
 
   getSku(): SKU {
@@ -56,6 +60,37 @@ export class InventoryItem {
     if (quantity.isGreaterThan(available)) {
       throw new Error("Insufficient available stock");
     }
+    this.quantity = this.quantity.subtract(quantity);
+  }
+
+  adjustToCount(newCount: Quantity): number {
+    const oldQuantity = this.quantity.toNumber();
+    this.quantity = newCount;
+    return newCount.toNumber() - oldQuantity;
+  }
+
+  setReorderThreshold(threshold: Quantity): void {
+    this.reorderThreshold = threshold;
+  }
+
+  getReorderThreshold(): Quantity | null {
+    return this.reorderThreshold;
+  }
+
+  needsReorder(): boolean {
+    if (this.reorderThreshold === null) {
+      return false;
+    }
+    const available = this.getAvailableQuantity();
+    return !available.isGreaterThan(this.reorderThreshold);
+  }
+
+  recordShrinkage(quantity: Quantity, reason: ShrinkageReason): void {
+    const available = this.getAvailableQuantity();
+    if (quantity.isGreaterThan(available)) {
+      throw new Error("Insufficient available stock for shrinkage");
+    }
+    this.shrinkageRecords.push(ShrinkageRecord.create(quantity, reason));
     this.quantity = this.quantity.subtract(quantity);
   }
 
