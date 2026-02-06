@@ -1,6 +1,5 @@
 import Fastify from "fastify";
-import { registerWarehouseRoutes } from "./api/warehouse.routes.js";
-import { registerPricingRoutes } from "./api/pricing.routes.js";
+import { registerItemRoutes } from "./api/items.routes.js";
 import { createAppDependencies } from "./di.js";
 
 export function createApp() {
@@ -10,8 +9,7 @@ export function createApp() {
 
   const { warehouseUseCases, pricingUseCases } = createAppDependencies();
 
-  registerWarehouseRoutes(fastify, warehouseUseCases);
-  registerPricingRoutes(fastify, pricingUseCases);
+  registerItemRoutes(fastify, warehouseUseCases, pricingUseCases);
 
   fastify.get("/health", async () => {
     return { status: "ok" };
