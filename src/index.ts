@@ -7,9 +7,9 @@ export function createApp() {
     logger: true,
   });
 
-  const { warehouseUseCases, pricingUseCases } = createAppDependencies();
+  const { warehouseUseCases, pricingUseCases, shelfLabel } = createAppDependencies();
 
-  registerItemRoutes(fastify, warehouseUseCases, pricingUseCases);
+  registerItemRoutes(fastify, warehouseUseCases, pricingUseCases, shelfLabel);
 
   fastify.get("/health", async () => {
     return { status: "ok" };

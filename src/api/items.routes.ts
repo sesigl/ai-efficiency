@@ -2,11 +2,13 @@ import type { FastifyInstance } from "fastify";
 import type { PricingUseCases } from "../modules/pricing/infrastructure/di.js";
 import type { WarehouseUseCases } from "../modules/warehouse/infrastructure/di.js";
 import type { PromotionType } from "../modules/pricing/domain/price-entry/Promotion.js";
+import type { ShelfLabelUseCases } from "../application/shelf-label/ShelfLabelUseCases.js";
 
 export function registerItemRoutes(
   fastify: FastifyInstance,
   warehouseUseCases: WarehouseUseCases,
   pricingUseCases: PricingUseCases,
+  shelfLabelUseCases: ShelfLabelUseCases,
 ): void {
   // Pricing: Set base price
   fastify.put<{
@@ -187,6 +189,17 @@ export function registerItemRoutes(
     } catch (error) {
       return reply.code(400).send({ error: (error as Error).message });
     }
+  });
+
+  // Cross-context: Shelf label data
+  fastify.get<{
+    Params: { sku: string };
+  }>("/items/:sku/shelf-label", async (request, reply) => {
+    const label = shelfLabelUseCases.generateShelfLabel({ sku: request.params.sku });
+    if (!label) {
+      return reply.code(404).send({ error: "Shelf label data not available" });
+    }
+    return reply.send(label);
   });
 
   // Warehouse: Stock adjustments (add/remove via quantityDelta)

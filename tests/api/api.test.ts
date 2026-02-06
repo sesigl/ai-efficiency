@@ -2070,4 +2070,152 @@ describe("API", () => {
       expect(response.json().totalSavingsInCents).toBeGreaterThan(0);
     });
   });
+
+  describe("GET /items/:sku/shelf-label", () => {
+    it("returns shelf label with price and in-stock badge", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 999 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "shelf-label"),
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json().sku).toBe("APPLE-001");
+      expect(response.json().finalPriceInCents).toBe(999);
+      expect(response.json().basePriceInCents).toBeNull();
+      expect(response.json().savingsPercentage).toBe(0);
+      expect(response.json().availabilityBadge).toBe("In Stock");
+    });
+
+    it("shows base price and savings when discount is active", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const { validFrom, validUntil } = promotionDates();
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Summer Sale",
+          type: "SEASONAL",
+          discountPercentage: 20,
+          validFrom,
+          validUntil,
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "shelf-label"),
+      });
+
+      expect(response.json().finalPriceInCents).toBe(800);
+      expect(response.json().basePriceInCents).toBe(1000);
+      expect(response.json().savingsPercentage).toBe(20);
+      expect(response.json().availabilityBadge).toBe("In Stock");
+    });
+
+    it("shows Low Stock badge when availability is low", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 3 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 500 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "shelf-label"),
+      });
+
+      expect(response.json().availabilityBadge).toBe("Low Stock");
+    });
+
+    it("shows Out of Stock badge when no stock", async () => {
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 500 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "shelf-label"),
+      });
+
+      expect(response.json().availabilityBadge).toBe("Out of Stock");
+    });
+
+    it("returns 404 when price entry does not exist", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "shelf-label"),
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it("hides base price when no discounts are active", async () => {
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "stock-adjustments"),
+        payload: { quantityDelta: 100 },
+      });
+      await app.inject({
+        method: "PUT",
+        url: itemUrl("APPLE-001", "price"),
+        payload: { priceInCents: 1000 },
+      });
+
+      const { validFrom, validUntil } = pastPromotionDates();
+      await app.inject({
+        method: "POST",
+        url: itemUrl("APPLE-001", "promotions"),
+        payload: {
+          name: "Expired Sale",
+          type: "SEASONAL",
+          discountPercentage: 20,
+          validFrom,
+          validUntil,
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: itemUrl("APPLE-001", "shelf-label"),
+      });
+
+      expect(response.json().finalPriceInCents).toBe(1000);
+      expect(response.json().basePriceInCents).toBeNull();
+      expect(response.json().savingsPercentage).toBe(0);
+    });
+  });
 });
