@@ -3,6 +3,7 @@ import type { PriceEntry } from "./price-entry.js";
 export interface PricingRepository {
   findBySku(sku: string): PriceEntry | undefined;
   save(entry: PriceEntry): void;
+  findAll(): PriceEntry[];
 }
 
 export class InMemoryPricingRepository implements PricingRepository {
@@ -14,5 +15,9 @@ export class InMemoryPricingRepository implements PricingRepository {
 
   save(entry: PriceEntry): void {
     this.entries.set(entry.sku, entry);
+  }
+
+  findAll(): PriceEntry[] {
+    return [...this.entries.values()];
   }
 }

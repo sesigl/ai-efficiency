@@ -4,8 +4,18 @@ export interface Reservation {
   expiresAt: string;
 }
 
+export type ShrinkageReason = "damaged" | "expired" | "theft";
+
+export interface ShrinkageRecord {
+  quantity: number;
+  reason: ShrinkageReason;
+  recordedAt: string;
+}
+
 export class InventoryItem {
   private reservations: Reservation[] = [];
+  private shrinkageRecords: ShrinkageRecord[] = [];
+  private reorderThreshold: number | undefined;
 
   constructor(
     public readonly sku: string,
@@ -52,5 +62,43 @@ export class InventoryItem {
 
   releaseReservation(reservationId: string): void {
     this.reservations = this.reservations.filter((r) => r.reservationId !== reservationId);
+  }
+
+  setQuantity(newQuantity: number): number {
+    const previousQuantity = this.quantity;
+    this.quantity = newQuantity;
+    return newQuantity - previousQuantity;
+  }
+
+  setReorderThreshold(threshold: number): void {
+    this.reorderThreshold = threshold;
+  }
+
+  getReorderThreshold(): number | undefined {
+    return this.reorderThreshold;
+  }
+
+  needsReorder(): boolean {
+    if (this.reorderThreshold === undefined) {
+      return false;
+    }
+    return this.getAvailableQuantity() <= this.reorderThreshold;
+  }
+
+  recordShrinkage(quantity: number, reason: ShrinkageReason): void {
+    const availableQuantity = this.getAvailableQuantity();
+    if (quantity > availableQuantity) {
+      throw new Error("Insufficient available stock for shrinkage");
+    }
+    this.quantity -= quantity;
+    this.shrinkageRecords.push({
+      quantity,
+      reason,
+      recordedAt: new Date().toISOString(),
+    });
+  }
+
+  getShrinkageRecords(): ShrinkageRecord[] {
+    return [...this.shrinkageRecords];
   }
 }

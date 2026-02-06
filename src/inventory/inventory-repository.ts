@@ -4,6 +4,7 @@ export interface InventoryRepository {
   findBySku(sku: string): InventoryItem | undefined;
   save(item: InventoryItem): void;
   getOrCreate(sku: string, initialQuantity: number): InventoryItem;
+  findAll(): InventoryItem[];
 }
 
 export class InMemoryInventoryRepository implements InventoryRepository {
@@ -25,5 +26,9 @@ export class InMemoryInventoryRepository implements InventoryRepository {
     const newItem = new InventoryItem(sku, initialQuantity);
     this.save(newItem);
     return newItem;
+  }
+
+  findAll(): InventoryItem[] {
+    return [...this.items.values()];
   }
 }
